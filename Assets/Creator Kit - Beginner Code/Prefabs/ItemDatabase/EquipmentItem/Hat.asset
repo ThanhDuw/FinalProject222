@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-1917229734816804784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 674612dbe4e22e441942361b0bdb7803, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Description: Give 10 HP
+  Modifier:
+    ModifierMode: 1
+    Stats:
+      health: 10
+      strength: 0
+      defense: 0
+      agility: 0
+      elementalProtection: 00000000000000000000000000000000
+      elementalBoosts: 00000000000000000000000000000000
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 640b52b005f736744b3aabdfb8f24abb, type: 3}
+  m_Name: Hat
+  m_EditorClassIdentifier: 
+  ItemName: ' Warrior Helmet'
+  ItemSprite: {fileID: 21300000, guid: 26f5264360368854eae1764927bf8ce5, type: 3}
+  Description: 
+  WorldObjectPrefab: {fileID: 271279907988320345, guid: 0f279afccda43724fa02fae285f4e4b5,
+    type: 3}
+  Slot: 0
+  MinimumStrength: 0
+  MinimumAgility: 0
+  MinimumDefense: 0
+  EquippedEffects:
+  - {fileID: -1917229734816804784}
