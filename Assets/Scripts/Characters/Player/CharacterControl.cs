@@ -1,16 +1,14 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Timers;
 using CreatorKitCode;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
 
 namespace CreatorKitCodeInternal {
     public class CharacterControl : MonoBehaviour, 
-        AnimationControllerDispatcher.IAttackFrameReceiver,
         AnimationControllerDispatcher.IFootstepFrameReceiver
     {
         public static CharacterControl Instance { get; protected set; }
@@ -18,24 +16,20 @@ namespace CreatorKitCodeInternal {
         public float Speed = 10.0f;
 
         public CharacterData Data => m_CharacterData;
-        public CharacterData CurrentTarget => m_CurrentTargetCharacterData;
+        public CharacterData CurrentTarget => m_CombatController != null ? m_CombatController.CurrentTarget : null;
 
         public Transform WeaponLocator;
     
         [Header("Audio")]
         public AudioClip[] SpurSoundClips;
     
-        Vector3 m_LastRaycastResult;
         Animator m_Animator;
-        NavMeshAgent m_Agent;
+        CharacterController m_CharacterController;
         CharacterData m_CharacterData;
-
-        HighlightableObject m_Highlighted;
 
         RaycastHit[] m_RaycastHitCache = new RaycastHit[16];
 
         int m_SpeedParamID;
-        int m_AttackParamID;
         int m_HitParamID;
         int m_FaintParamID;
         int m_RespawnParamID;
@@ -43,32 +37,26 @@ namespace CreatorKitCodeInternal {
         bool m_IsKO = false;
         float m_KOTimer = 0.0f;
 
-        int m_InteractableLayer;
-        int m_LevelLayer;
-        Collider m_TargetCollider;
-        InteractableObject m_TargetInteractable = null;
         Camera m_MainCamera;
-
-        NavMeshPath m_CalculatedPath;
-
         CharacterAudio m_CharacterAudio;
 
-        int m_TargetLayer;
-        CharacterData m_CurrentTargetCharacterData = null;
-        //this is a flag that tell the controller it need to clear the target once the attack finished.
-        //usefull for when clicking elwswhere mid attack animation, allow to finish the attack and then exit.
-        bool m_ClearPostAttack = false;
-
         SpawnPoint m_CurrentSpawn = null;
+        
+        // ========== RESTORED: Interactable tracking ==========
+        Collider m_TargetCollider;
+        InteractableObject m_TargetInteractable = null;
     
-        enum State
+        enum LocalState
         {
             DEFAULT,
             HIT,
-            ATTACKING
+            DEAD
         }
 
-        State m_CurrentState;
+        LocalState m_CurrentState;
+
+        // Combat Controller reference
+        CombatController m_CombatController;
 
         void Awake()
         {
@@ -82,24 +70,22 @@ namespace CreatorKitCodeInternal {
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
         
-            m_CalculatedPath = new NavMeshPath();
-        
-            m_Agent = GetComponent<NavMeshAgent>();
+            m_CharacterController = GetComponent<CharacterController>();
+            if (m_CharacterController == null)
+            {
+                Debug.LogError("CharacterControl: CharacterController component not found! Please add CharacterController to this GameObject.");
+            }
+
             m_Animator = GetComponentInChildren<Animator>();
         
-            m_Agent.speed = Speed;
-            m_Agent.angularSpeed = 360.0f;
-
-            m_LastRaycastResult = transform.position;
-
             m_SpeedParamID = Animator.StringToHash("Speed");
-            m_AttackParamID = Animator.StringToHash("Attack");
             m_HitParamID = Animator.StringToHash("Hit");
             m_FaintParamID = Animator.StringToHash("Faint");
             m_RespawnParamID = Animator.StringToHash("Respawn");
 
             m_CharacterData = GetComponent<CharacterData>();
 
+            // Equipment system - UNCHANGED
             m_CharacterData.Equipment.OnEquiped += item =>
             {
                 if (item.Slot == (EquipmentItem.EquipmentSlot)666)
@@ -110,7 +96,7 @@ namespace CreatorKitCodeInternal {
             };
         
             m_CharacterData.Equipment.OnUnequip += item =>
-            {
+            {       
                 if (item.Slot == (EquipmentItem.EquipmentSlot)666)
                 {
                     foreach(Transform t in WeaponLocator)
@@ -119,20 +105,24 @@ namespace CreatorKitCodeInternal {
             };
             
             m_CharacterData.Init();
-        
-            m_InteractableLayer = 1 << LayerMask.NameToLayer("Interactable");
-            m_LevelLayer = 1 << LayerMask.NameToLayer("Level");
-            m_TargetLayer = 1 << LayerMask.NameToLayer("Target");
 
-            m_CurrentState = State.DEFAULT;
+            m_CurrentState = LocalState.DEFAULT;
 
             m_CharacterAudio = GetComponent<CharacterAudio>();
         
+            // Damage callback - UNCHANGED
             m_CharacterData.OnDamage += () =>
             {
                 m_Animator.SetTrigger(m_HitParamID);
                 m_CharacterAudio.Hit(transform.position);
             };
+
+            // Initialize Combat Controller
+            m_CombatController = GetComponent<CombatController>();
+            if (m_CombatController == null)
+            {
+                Debug.LogError("CharacterControl: CombatController component not found!");
+            }
         }
 
         // Update is called once per frame
@@ -140,6 +130,7 @@ namespace CreatorKitCodeInternal {
         {
             Vector3 pos = transform.position;
         
+            // KO state - UNCHANGED
             if (m_IsKO)
             {
                 m_KOTimer += Time.deltaTime;
@@ -147,102 +138,77 @@ namespace CreatorKitCodeInternal {
                 {
                     GoToRespawn();
                 }
-
                 return;
             }
 
-            //The update need to run, so we can check the health here.
-            //Another method would be to add a callback in the CharacterData that get called
-            //when health reach 0, and this class register to the callback in Start
-            //(see CharacterData.OnDamage for an example)
+            // Health check - UNCHANGED (modified for no NavMesh)
             if (m_CharacterData.Stats.CurrentHealth == 0)
             {
                 m_Animator.SetTrigger(m_FaintParamID);
-
-                m_Agent.isStopped = true;
-                m_Agent.ResetPath();
                 m_IsKO = true;
                 m_KOTimer = 0.0f;
             
                 Data.Death();
-            
                 m_CharacterAudio.Death(pos);
             
                 return;
             }
-        
-            Ray screenRay = CameraController.Instance.GameplayCamera.ScreenPointToRay(Input.mousePosition);
-        
+
+            // ========== RESTORED: Check interactable range ==========
             if (m_TargetInteractable != null)
             {
                 CheckInteractableRange();
             }
 
-            if (m_CurrentTargetCharacterData != null)
+            // ========== REFACTORED: WASD Movement System ==========
+            float h = Input.GetAxisRaw("Horizontal");
+            float v = Input.GetAxisRaw("Vertical");
+
+            // Camera-relative movement for top-down (Y axis ignored)
+            Vector3 camForward = m_MainCamera.transform.forward;
+            camForward.y = 0f;
+            camForward.Normalize();
+            
+            Vector3 camRight = m_MainCamera.transform.right;
+            camRight.y = 0f;
+            camRight.Normalize();
+
+            Vector3 moveDir = (camRight * h + camForward * v).normalized;
+            float inputMag = new Vector2(h, v).magnitude > 0f ? 1f : 0f;
+
+            // Rotate character to face movement direction
+            if (moveDir.sqrMagnitude > 0.001f)
             {
-                if (m_CurrentTargetCharacterData.Stats.CurrentHealth == 0)
-                    m_CurrentTargetCharacterData = null;
-                else
-                    CheckAttack();
+                transform.forward = moveDir;
             }
-        
+
+            // Apply movement via CharacterController
+            Vector3 moveVelocity = moveDir * Speed * Time.deltaTime;
+            if (m_CharacterController != null && m_CharacterController.enabled)
+            {
+                m_CharacterController.Move(moveVelocity);
+            }
+
+            // Update animator speed parameter
+            m_Animator.SetFloat(m_SpeedParamID, inputMag);
+
+            // ========== Camera Zoom (UNCHANGED) ==========
             float mouseWheel = Input.GetAxis("Mouse ScrollWheel");
             if (!Mathf.Approximately(mouseWheel, 0.0f))
             {
                 Vector3 view = m_MainCamera.ScreenToViewportPoint(Input.mousePosition);
-                if(view.x > 0f && view.x < 1f && view.y > 0f && view.y < 1f)
+                if (view.x > 0f && view.x < 1f && view.y > 0f && view.y < 1f)
                     CameraController.Instance.Zoom(-mouseWheel * Time.deltaTime * 20.0f);
             }
-        
-            if(Input.GetMouseButtonDown(0))
-            { //if we click the mouse button, we clear any previously et targets
 
-                if (m_CurrentState != State.ATTACKING)
-                {
-                    m_CurrentTargetCharacterData = null;
-                    m_TargetInteractable = null;
-                }
-                else
-                {
-                    m_ClearPostAttack = true;
-                }
-            }
-
-
-            if (!EventSystem.current.IsPointerOverGameObject() && m_CurrentState != State.ATTACKING)
+            // ========== Combat Input (delegated to CombatController) ==========
+            if (Input.GetKeyDown(KeyCode.Space) && m_CombatController != null)
             {
-                //Raycast to find object currently under the mouse cursor
-                ObjectsRaycasts(screenRay);
-            
-                if (Input.GetMouseButton(0))
-                {
-                    if (m_TargetInteractable == null && m_CurrentTargetCharacterData == null)
-                    {
-                        InteractableObject obj = m_Highlighted as InteractableObject;
-                        if (obj)
-                        {
-                            InteractWith(obj);
-                        }
-                        else
-                        {
-                            CharacterData data = m_Highlighted as CharacterData;
-                            if (data != null)
-                            {
-                                m_CurrentTargetCharacterData = data;
-                            }
-                            else
-                            {
-                                MoveCheck(screenRay);
-                            }
-                        }
-                    }
-                }
+                m_CombatController.TryAttack();
             }
 
-            m_Animator.SetFloat(m_SpeedParamID, m_Agent.velocity.magnitude / m_Agent.speed);
-        
-            //Keyboard shortcuts
-            if(Input.GetKeyUp(KeyCode.I))
+            // ========== Keyboard Shortcuts (UNCHANGED) ==========
+            if (Input.GetKeyUp(KeyCode.I))
                 UISystem.Instance.ToggleInventory();
         }
 
@@ -250,194 +216,77 @@ namespace CreatorKitCodeInternal {
         {
             m_Animator.ResetTrigger(m_HitParamID);
         
-            m_Agent.Warp(m_CurrentSpawn.transform.position);
-            m_Agent.isStopped = true;
-            m_Agent.ResetPath();
-            m_IsKO = false;
+            if (m_CurrentSpawn != null)
+            {
+                transform.position = m_CurrentSpawn.transform.position;
+            }
 
-            m_CurrentTargetCharacterData = null;
-            m_TargetInteractable = null;
-
-            m_CurrentState = State.DEFAULT;
+            m_CurrentState = LocalState.DEFAULT;
         
             m_Animator.SetTrigger(m_RespawnParamID);
         
             m_CharacterData.Stats.ChangeHealth(m_CharacterData.Stats.stats.health);
-        }
 
-        void ObjectsRaycasts(Ray screenRay)
-        {
-            bool somethingFound = false;
-
-            //first check for interactable Object
-            int count = Physics.SphereCastNonAlloc(screenRay, 1.0f, m_RaycastHitCache, 1000.0f, m_InteractableLayer);
-            if (count > 0)
+            // Reset combat state
+            if (m_CombatController != null)
             {
-                for (int i = 0; i < count; ++i)
-                {
-                    InteractableObject obj = m_RaycastHitCache[0].collider.GetComponentInParent<InteractableObject>();
-                    if (obj != null && obj.IsInteractable)
-                    {
-                        SwitchHighlightedObject(obj);
-                        somethingFound = true;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                count = Physics.SphereCastNonAlloc(screenRay, 1.0f, m_RaycastHitCache, 1000.0f, m_TargetLayer);
-
-                if (count > 0)
-                {
-                    CharacterData data = m_RaycastHitCache[0].collider.GetComponentInParent<CharacterData>();
-                    if (data != null)
-                    {
-                        SwitchHighlightedObject(data);
-                        somethingFound = true;
-                    }
-                }
+                m_CombatController.ResetCombat();
             }
 
-            if (!somethingFound && m_Highlighted != null)
-            {
-                SwitchHighlightedObject(null);
-            }
-        }
-
-        void SwitchHighlightedObject(HighlightableObject obj)
-        {
-            if(m_Highlighted != null) m_Highlighted.Dehighlight();
-
-            m_Highlighted = obj;
-            if(m_Highlighted != null) m_Highlighted.Highlight();
-        }
-
-        void MoveCheck(Ray screenRay)
-        {     
-            if ( m_CalculatedPath.status == NavMeshPathStatus.PathComplete)
-            {
-                m_Agent.SetPath(m_CalculatedPath);
-                m_CalculatedPath.ClearCorners();
-            }
-        
-            if (Physics.RaycastNonAlloc(screenRay, m_RaycastHitCache, 1000.0f, m_LevelLayer) > 0)
-            {
-                Vector3 point = m_RaycastHitCache[0].point;
-                //avoid recomputing path for close enough click
-                if (Vector3.SqrMagnitude(point - m_LastRaycastResult) > 1.0f)
-                {
-                    NavMeshHit hit;
-                    if (NavMesh.SamplePosition(point, out hit, 0.5f, NavMesh.AllAreas))
-                    {//sample just around where we hit, avoid setting destination outside of navmesh (ie. on building)
-                        m_LastRaycastResult = point;
-                        //m_Agent.SetDestination(hit.position);
-
-                        m_Agent.CalculatePath(hit.position, m_CalculatedPath);
-                    }
-                }
-            }
-        }
-
-        void CheckInteractableRange()
-        {
-            if(m_CurrentState == State.ATTACKING)
-                return;
-        
-            Vector3 distance = m_TargetCollider.ClosestPointOnBounds(transform.position) - transform.position;
-        
-            
-            if (distance.sqrMagnitude < 1.5f * 1.5f)
-            {
-                StopAgent();
-                m_TargetInteractable.InteractWith(m_CharacterData);
-                m_TargetInteractable = null;
-            }
-        }
-
-        void StopAgent()
-        {
-            m_Agent.ResetPath();
-            m_Agent.velocity = Vector3.zero;
-        }
-
-        void CheckAttack()
-        {
-            if(m_CurrentState == State.ATTACKING)
-                return;
-               
-            if (m_CharacterData.CanAttackReach(m_CurrentTargetCharacterData))
-            {
-                StopAgent();
-
-                //if the mouse button isn't pressed, we do NOT attack
-                if (Input.GetMouseButton(0))
-                {
-                    Vector3 forward = (m_CurrentTargetCharacterData.transform.position - transform.position);
-                    forward.y = 0;
-                    forward.Normalize();
-
-                    
-                    transform.forward = forward;
-                    if (m_CharacterData.CanAttackTarget(m_CurrentTargetCharacterData))
-                    {
-                        m_CurrentState = State.ATTACKING;
-
-                        m_CharacterData.AttackTriggered();
-                        m_Animator.SetTrigger(m_AttackParamID);
-                    }
-                }
-            }
-            else
-            {
-                m_Agent.SetDestination(m_CurrentTargetCharacterData.transform.position);
-            }
-        }
-
-        public void AttackFrame()
-        {
-            if (m_CurrentTargetCharacterData == null)
-            {
-                m_ClearPostAttack = false;
-                return;
-            }
-
-            //if we can't reach the target anymore when it's time to damage, then that attack miss.
-            if (m_CharacterData.CanAttackReach(m_CurrentTargetCharacterData))
-            {
-                m_CharacterData.Attack(m_CurrentTargetCharacterData);
-
-                var attackPos = m_CurrentTargetCharacterData.transform.position + transform.up * 0.5f;
-                VFXManager.PlayVFX(VFXType.Hit, attackPos);
-                SFXManager.PlaySound(m_CharacterAudio.UseType, new SFXManager.PlayData() { Clip = m_CharacterData.Equipment.Weapon.GetHitSound(), PitchMin = 0.8f, PitchMax = 1.2f, Position = attackPos });
-            }
-
-            if(m_ClearPostAttack)
-            {
-                m_ClearPostAttack = false;
-                m_CurrentTargetCharacterData = null;
-                m_TargetInteractable = null;
-            }
-
-            m_CurrentState = State.DEFAULT;
+            // ========== RESTORED: Clear interactable on respawn ==========
+            m_TargetInteractable = null;
         }
 
         public void SetNewRespawn(SpawnPoint point)
         {
-            if(m_CurrentSpawn != null)
+            if (m_CurrentSpawn != null)
                 m_CurrentSpawn.Deactivated();
 
             m_CurrentSpawn = point;
             m_CurrentSpawn.Activated();
         }
 
-        public void InteractWith(InteractableObject obj)
+        /// <summary>
+        /// RESTORED: Handle both InteractableObject and Loot interactions
+        /// Originally handled click-to-interact, now called directly:
+        /// - From LootUI when player clicks loot button
+        /// - Can be extended for other InteractableObject types
+        /// </summary>
+        public void InteractWith(object obj)
         {
-            if (obj.IsInteractable)
+            // Handle Loot interaction (from LootUI)
+            if (obj is Loot loot)
             {
-                m_TargetCollider = obj.GetComponentInChildren<Collider>();
-                m_TargetInteractable = obj;
-                m_Agent.SetDestination(obj.transform.position);
+                if (loot != null && loot.IsInteractable)
+                {
+                    loot.InteractWith(m_CharacterData);
+                }
+            }   
+            // Handle InteractableObject interaction (legacy support)
+            else if (obj is InteractableObject interactable)
+            {
+                if (interactable != null && interactable.IsInteractable)
+                {
+                    m_TargetCollider = interactable.GetComponentInChildren<Collider>();
+                    m_TargetInteractable = interactable;
+                }
+            }
+        }
+
+        /// <summary>
+        /// RESTORED: Check if player is close enough to interactable to trigger it
+        /// </summary>
+        void CheckInteractableRange()
+        {
+            if (m_TargetInteractable == null)
+                return;
+
+            Vector3 distance = m_TargetCollider.ClosestPointOnBounds(transform.position) - transform.position;
+
+            if (distance.sqrMagnitude < 1.5f * 1.5f)
+            {
+                m_TargetInteractable.InteractWith(m_CharacterData);
+                m_TargetInteractable = null;
             }
         }
 
