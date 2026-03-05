@@ -1,0 +1,10 @@
+/Library/
+/Temp/
+/Logs/
+/Build/
+/UserSettings/
+/Obj/
+*.unitypackage
+*.csproj
+*.sln
+*.meta

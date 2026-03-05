@@ -5,8 +5,17 @@ namespace CreatorKitCodeInternal {
     public class CombatController : MonoBehaviour, 
         AnimationControllerDispatcher.IAttackFrameReceiver
     {
+        [Header("Tuned Combat Settings")]
+        [SerializeField] private float attackConeAngle = 70f;          // Full cone angle (degrees)
+        [SerializeField] private float sweepRadiusMultiplier = 0.2f;   // Sweep radius relative to weapon range
+        [SerializeField] private float lungeDistance = 0.6f;           // Forward movement during wind-up
+        [SerializeField] private LayerMask attackLayerMask;            // Layers that can be hit
+        [SerializeField] private bool debugDraw = true;                // Toggle debug gizmos & rays
+
+        [Header("References")]
+        [SerializeField] private Transform weaponLocator;              // Optional explicit weapon origin
         [Header("Combat Settings")]
-        [SerializeField] private float m_AttackConeAngle = 60f;  // 60° cone attack
+        [SerializeField] private float m_AttackConeAngle = 60f;  // 60ï¿½ cone attack
         [SerializeField] private float m_LungeDistance = 0.5f;   // Forward movement during attack
         [SerializeField] private float m_KnockbackForce = 2f;    // Enemy knockback magnitude
         [SerializeField] private float m_SearchRadius = 8f;      // How far to search for weapon range
@@ -32,8 +41,11 @@ namespace CreatorKitCodeInternal {
         private const int MAX_COMBO_HITS = 2;
 
         // For gizmo debugging
-        private bool m_DrawDebugCone = true;
         private Vector3 m_LastAttackPos = Vector3.zero;
+
+        // Non-alloc buffers to reduce GC allocations
+        private readonly RaycastHit[] m_SphereCastHits = new RaycastHit[8];
+        private readonly Collider[] m_OverlapHits = new Collider[8];
 
         // ========== NEW: Target tracking for UISystem ==========
         private CharacterData m_CurrentTarget = null;
@@ -48,6 +60,29 @@ namespace CreatorKitCodeInternal {
             m_CharacterController = GetComponent<CharacterController>();
 
             m_AttackParamID = Animator.StringToHash("Attack");
+
+            // Default attack layer: "Target"
+            if (attackLayerMask == 0)
+            {
+                attackLayerMask = LayerMask.GetMask("Target");
+            }
+
+            // Try to auto-find weapon locator
+            if (weaponLocator == null)
+            {
+                // Prefer CharacterControl's WeaponLocator if present
+                var control = GetComponent<CharacterControl>();
+                if (control != null && control.WeaponLocator != null)
+                {
+                    weaponLocator = control.WeaponLocator;
+                }
+                else
+                {
+                    Transform found = transform.Find("LocatorWeapon");
+                    if (found != null)
+                        weaponLocator = found;
+                }
+            }
         }
 
         void Update()
@@ -76,13 +111,13 @@ namespace CreatorKitCodeInternal {
 
         void OnDrawGizmosSelected()
         {
-            if (!m_DrawDebugCone || m_CurrentState == CombatState.Idle)
+            if (!debugDraw)
                 return;
 
             // Draw attack cone visualization
-            Vector3 attackPos = transform.position + transform.forward * 1f;
+            Vector3 attackPos = Application.isPlaying ? GetAttackOrigin() : transform.position + transform.forward * 1f;
             float weaponRange = GetCurrentWeaponRange();
-            float halfAngle = m_AttackConeAngle * 0.5f;
+            float halfAngle = attackConeAngle * 0.5f;
 
             Gizmos.color = Color.red;
             Vector3 leftDir = Quaternion.Euler(0, -halfAngle, 0) * transform.forward;
@@ -110,6 +145,18 @@ namespace CreatorKitCodeInternal {
                 Gizmos.DrawLine(lastPoint, newPoint);
                 lastPoint = newPoint;
             }
+        }
+
+        /// <summary>
+        /// Compute the origin of the attack sweep.
+        /// Prefer an explicit weapon locator if available, otherwise fall back to body center.
+        /// </summary>
+        private Vector3 GetAttackOrigin()
+        {
+            if (weaponLocator != null)
+                return weaponLocator.position;
+
+            return transform.position + Vector3.up * 0.5f;
         }
 
         /// <summary>
@@ -185,7 +232,7 @@ namespace CreatorKitCodeInternal {
         private void UpdateWindUp()
         {
             // Apply slight forward lunge during wind-up
-            Vector3 lungeVelocity = transform.forward * (m_LungeDistance / m_WindUpDuration) * Time.deltaTime;
+            Vector3 lungeVelocity = transform.forward * (lungeDistance / m_WindUpDuration) * Time.deltaTime;
             if (m_CharacterController != null && m_CharacterController.enabled)
             {
                 m_CharacterController.Move(lungeVelocity);
@@ -231,7 +278,7 @@ namespace CreatorKitCodeInternal {
 
         /// <summary>
         /// Called by animation event (same as old AttackFrame)
-        /// Performs damage check using cone attack + overlap sphere
+        /// Performs damage check using sweep-based cone attack to better match melee swings.
         /// </summary>
         public void AttackFrame()
         {
@@ -241,48 +288,111 @@ namespace CreatorKitCodeInternal {
             if (m_CharacterData == null || m_CharacterData.Equipment.Weapon == null)
                 return;
 
-            Vector3 attackOrigin = transform.position + Vector3.up * 0.5f;
+            Vector3 origin = GetAttackOrigin();
             float weaponRange = GetCurrentWeaponRange();
 
-            // Find all potential targets in attack range on Target layer
-            int targetLayer = LayerMask.NameToLayer("Target");
-            Collider[] hits = Physics.OverlapSphere(attackOrigin, weaponRange, 1 << targetLayer);
-
-            CharacterData nearestTarget = null;
-            float bestDistance = float.MaxValue;
-            float halfConeAngle = m_AttackConeAngle * 0.5f;
-
-            for (int i = 0; i < hits.Length; i++)
+            // Debug visualization of direction & origin
+            if (debugDraw)
             {
-                CharacterData target = hits[i].GetComponentInParent<CharacterData>();
-                
+                Debug.DrawRay(origin, transform.forward * weaponRange, Color.red, 0.25f);
+
+                const int segments = 16;
+                float step = 360f / segments;
+                Vector3 prev = origin + new Vector3(0f, 0f, weaponRange);
+                for (int i = 1; i <= segments; ++i)
+                {
+                    float angleRad = step * i * Mathf.Deg2Rad;
+                    Vector3 next = origin + new Vector3(Mathf.Sin(angleRad) * weaponRange, 0f, Mathf.Cos(angleRad) * weaponRange);
+                    Debug.DrawLine(prev, next, Color.yellow, 0.25f);
+                    prev = next;
+                }
+            }
+
+            // Flattened forward for cone calculations (ignore Y)
+            Vector3 forwardFlat = transform.forward;
+            forwardFlat.y = 0f;
+            if (forwardFlat.sqrMagnitude > 0.0001f)
+                forwardFlat.Normalize();
+
+            float halfCone = attackConeAngle * 0.5f;
+            float sweepRadius = weaponRange * sweepRadiusMultiplier;
+
+            CharacterData bestTarget = null;
+            float bestDistanceSq = float.MaxValue;
+
+            // Local method to evaluate a potential target without allocations
+            void ProcessTarget(CharacterData target)
+            {
                 if (target == null || target == m_CharacterData)
-                    continue;
+                    return;
 
                 if (target.Stats.CurrentHealth <= 0)
+                    return;
+
+                Vector3 toTarget = target.transform.position - transform.position;
+                toTarget.y = 0f;
+
+                float distSq = toTarget.sqrMagnitude;
+                if (distSq < 0.0001f)
+                    return;
+
+                Vector3 dirToTarget = toTarget / Mathf.Sqrt(distSq);
+                float angle = Vector3.Angle(forwardFlat, dirToTarget);
+                if (angle > halfCone)
+                    return;
+
+                if (distSq < bestDistanceSq)
+                {
+                    bestDistanceSq = distSq;
+                    bestTarget = target;
+                }
+            }
+
+            // 1) Sweep-based detection along the swing path
+            int hitCount = Physics.SphereCastNonAlloc(
+                origin,
+                sweepRadius,
+                transform.forward,
+                m_SphereCastHits,
+                weaponRange,
+                attackLayerMask);
+
+            for (int i = 0; i < hitCount; ++i)
+            {
+                Collider col = m_SphereCastHits[i].collider;
+                if (col == null)
                     continue;
 
-                Vector3 dirToTarget = (target.transform.position - transform.position).normalized;
-                float angleToTarget = Vector3.Angle(transform.forward, dirToTarget);
+                CharacterData target = col.GetComponentInParent<CharacterData>();
+                ProcessTarget(target);
+            }
 
-                // Check if target is within cone
-                if (angleToTarget <= halfConeAngle)
+            // 2) Fallback: instant OverlapSphere to avoid "ghost misses"
+            if (bestTarget == null)
+            {
+                int overlapCount = Physics.OverlapSphereNonAlloc(
+                    origin,
+                    weaponRange,
+                    m_OverlapHits,
+                    attackLayerMask);
+
+                for (int i = 0; i < overlapCount; ++i)
                 {
-                    float distance = Vector3.Distance(transform.position, target.transform.position);
-                    if (distance < bestDistance)
-                    {
-                        bestDistance = distance;
-                        nearestTarget = target;
-                    }
+                    Collider col = m_OverlapHits[i];
+                    if (col == null)
+                        continue;
+
+                    CharacterData target = col.GetComponentInParent<CharacterData>();
+                    ProcessTarget(target);
                 }
             }
 
             // Apply damage to nearest target in cone
-            if (nearestTarget != null)
+            if (bestTarget != null)
             {
-                m_CharacterData.Attack(nearestTarget);
+                m_CharacterData.Attack(bestTarget);
 
-                Vector3 hitPos = nearestTarget.transform.position + Vector3.up * 0.5f;
+                Vector3 hitPos = bestTarget.transform.position + Vector3.up * 0.5f;
                 VFXManager.PlayVFX(VFXType.Hit, hitPos);
                 
                 // Get hit sound and play with correct SFXManager.Use type
@@ -297,13 +407,13 @@ namespace CreatorKitCodeInternal {
                     });
 
                 // Apply knockback
-                ApplyKnockback(nearestTarget);
+                ApplyKnockback(bestTarget);
 
                 // ========== NEW: Track current target for UI ==========
-                m_CurrentTarget = nearestTarget;
+                m_CurrentTarget = bestTarget;
             }
 
-            m_LastAttackPos = attackOrigin;
+            m_LastAttackPos = origin;
         }
 
         private void ApplyKnockback(CharacterData target)
