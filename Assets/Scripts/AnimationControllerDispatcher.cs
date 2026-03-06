@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace CreatorKitCodeInternal 
 {
@@ -41,21 +41,23 @@ namespace CreatorKitCodeInternal
             {
                 m_FootstepFrameReceiver = FootstepFrameReceiver as IFootstepFrameReceiver;
             
-                if (m_AttackReceiver == null)
+                if (m_FootstepFrameReceiver == null)
                 {
                     Debug.LogError("The Monobehaviour set as Footstep Frame Receiver don't implement the IFootstepFrameReceiver interface!", FootstepFrameReceiver);
                 }
             }
         }
 
-        void AttackEvent()
+void AttackEvent()
         {
-            m_AttackReceiver?.AttackFrame();
+            if (AttackFrameReceiver != null && m_AttackReceiver != null)
+                m_AttackReceiver.AttackFrame();
         }
 
-        void FootstepEvent()
+void FootstepEvent()
         {
-            m_FootstepFrameReceiver?.FootstepFrame();
+            if (FootstepFrameReceiver != null && m_FootstepFrameReceiver != null)
+                m_FootstepFrameReceiver.FootstepFrame();
         }
     }
 }

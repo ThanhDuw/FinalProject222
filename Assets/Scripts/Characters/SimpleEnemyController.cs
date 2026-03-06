@@ -1,4 +1,4 @@
-﻿using CreatorKitCode;
+using CreatorKitCode;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -31,6 +31,8 @@ namespace CreatorKitCodeInternal {
         int m_DeathAnimHash;
         int m_HitAnimHash;
         bool m_Pursuing;
+        bool m_IsDead = false;
+
         float m_PursuitTimer = 0.0f;
 
         State m_State;
@@ -38,7 +40,7 @@ namespace CreatorKitCodeInternal {
         LootSpawner m_LootSpawner;
     
         // Start is called before the first frame update
-        void Start()
+void Start()
         {
             m_Animator = GetComponentInChildren<Animator>();
             m_Agent = GetComponent<NavMeshAgent>();
@@ -55,6 +57,7 @@ namespace CreatorKitCodeInternal {
         
             m_CharacterData.OnDamage += () =>
             {
+                if (m_IsDead) return;
                 m_Animator.SetTrigger(m_HitAnimHash);
                 m_CharacterAudio.Hit(transform.position);
             };
@@ -67,12 +70,14 @@ namespace CreatorKitCodeInternal {
         }
 
         // Update is called once per frame
-        void Update()
+void Update()
         {
-            //See the Update function of CharacterControl.cs for a comment on how we could replace
-            //this (polling health) to a callback method.
+            if (m_IsDead) return;
+
             if (m_CharacterData.Stats.CurrentHealth == 0)
             {
+                m_IsDead = true;
+
                 m_Animator.SetTrigger(m_DeathAnimHash);
             
                 m_CharacterAudio.Death(transform.position);
@@ -87,9 +92,6 @@ namespace CreatorKitCodeInternal {
                 return;
             }
         
-            //NOTE : in a full game, this would use a targetting system that would give the closest target
-            //of the opposing team (e.g. multiplayer or player owned pets). Here for simplicity we just reference
-            //directly the player.
             Vector3 playerPosition = CharacterControl.Instance.transform.position;
             CharacterData playerData = CharacterControl.Instance.Data;
         
@@ -189,8 +191,10 @@ namespace CreatorKitCodeInternal {
             Gizmos.DrawWireSphere(transform.position, detectionRadius);
         }
 
-        public void FootstepFrame()
+public void FootstepFrame()
         {
+            if (m_IsDead) return;
+
             Vector3 pos = transform.position;
         
             m_CharacterAudio.Step(pos);
