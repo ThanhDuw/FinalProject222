@@ -14,9 +14,6 @@ namespace CreatorKitCodeInternal {
 
         [Header("References")]
         [SerializeField] private Transform weaponLocator;              // Optional explicit weapon origin
-        [Header("Combat Settings")]
-        [SerializeField] private float m_AttackConeAngle = 60f;  // 60� cone attack
-        [SerializeField] private float m_LungeDistance = 0.5f;   // Forward movement during attack
         [SerializeField] private float m_KnockbackForce = 2f;    // Enemy knockback magnitude
         [SerializeField] private float m_SearchRadius = 8f;      // How far to search for weapon range
 
@@ -52,8 +49,12 @@ namespace CreatorKitCodeInternal {
 
         public CharacterData CurrentTarget => m_CurrentTarget;
 
+        // Cache transform to avoid repeated property access
+        private Transform m_Transform;
+
         void Awake()
         {
+            m_Transform = transform;
             m_Animator = GetComponentInChildren<Animator>();
             m_CharacterData = GetComponent<CharacterData>();
             m_CharacterAudio = GetComponent<CharacterAudio>();
@@ -78,7 +79,7 @@ namespace CreatorKitCodeInternal {
                 }
                 else
                 {
-                    Transform found = transform.Find("LocatorWeapon");
+                    Transform found = m_Transform.Find("LocatorWeapon");
                     if (found != null)
                         weaponLocator = found;
                 }
@@ -115,18 +116,18 @@ namespace CreatorKitCodeInternal {
                 return;
 
             // Draw attack cone visualization
-            Vector3 attackPos = Application.isPlaying ? GetAttackOrigin() : transform.position + transform.forward * 1f;
+            Vector3 attackPos = Application.isPlaying ? GetAttackOrigin() : m_Transform.position + m_Transform.forward * 1f;
             float weaponRange = GetCurrentWeaponRange();
             float halfAngle = attackConeAngle * 0.5f;
 
             Gizmos.color = Color.red;
-            Vector3 leftDir = Quaternion.Euler(0, -halfAngle, 0) * transform.forward;
-            Vector3 rightDir = Quaternion.Euler(0, halfAngle, 0) * transform.forward;
+            Vector3 leftDir = Quaternion.Euler(0, -halfAngle, 0) * m_Transform.forward;
+            Vector3 rightDir = Quaternion.Euler(0, halfAngle, 0) * m_Transform.forward;
 
-            Gizmos.DrawLine(transform.position, transform.position + leftDir * weaponRange);
-            Gizmos.DrawLine(transform.position, transform.position + rightDir * weaponRange);
-            Gizmos.DrawLine(transform.position + leftDir * weaponRange, 
-                           transform.position + rightDir * weaponRange);
+            Gizmos.DrawLine(m_Transform.position, m_Transform.position + leftDir * weaponRange);
+            Gizmos.DrawLine(m_Transform.position, m_Transform.position + rightDir * weaponRange);
+            Gizmos.DrawLine(m_Transform.position + leftDir * weaponRange, 
+                           m_Transform.position + rightDir * weaponRange);
 
             // Draw search sphere
             Gizmos.color = new Color(1, 1, 0, 0.3f);
@@ -156,7 +157,7 @@ namespace CreatorKitCodeInternal {
             if (weaponLocator != null)
                 return weaponLocator.position;
 
-            return transform.position + Vector3.up * 0.5f;
+            return m_Transform.position + Vector3.up * 0.5f;
         }
 
         /// <summary>
@@ -173,6 +174,22 @@ namespace CreatorKitCodeInternal {
                 // Buffer input during recovery window for combo
                 m_InputBuffered = true;
             }
+        }
+
+        /// <summary>
+        /// Try attack at a specific target (click-to-attack).
+        /// </summary>
+        public void TryAttackAt(CharacterData target)
+        {
+            if (target == null)
+                return;
+            if (target == m_CharacterData)
+                return;
+            if (target.Stats.CurrentHealth <= 0)
+                return;
+
+            m_CurrentTarget = target;
+            TryAttack();
         }
 
         /// <summary>
@@ -199,7 +216,7 @@ namespace CreatorKitCodeInternal {
             // Play attack vocalization
             if (m_CharacterAudio != null)
             {
-                m_CharacterAudio.Attack(transform.position);
+                m_CharacterAudio.Attack(m_Transform.position);
             }
         }
 
@@ -232,7 +249,7 @@ namespace CreatorKitCodeInternal {
         private void UpdateWindUp()
         {
             // Apply slight forward lunge during wind-up
-            Vector3 lungeVelocity = transform.forward * (lungeDistance / m_WindUpDuration) * Time.deltaTime;
+            Vector3 lungeVelocity = m_Transform.forward * (lungeDistance / m_WindUpDuration) * Time.deltaTime;
             if (m_CharacterController != null && m_CharacterController.enabled)
             {
                 m_CharacterController.Move(lungeVelocity);
@@ -291,10 +308,46 @@ namespace CreatorKitCodeInternal {
             Vector3 origin = GetAttackOrigin();
             float weaponRange = GetCurrentWeaponRange();
 
+            // If a specific target was requested (click-to-attack), prefer it when in range
+            if (m_CurrentTarget != null && m_CurrentTarget.Stats.CurrentHealth > 0)
+            {
+                Vector3 toTarget = m_CurrentTarget.transform.position - m_Transform.position;
+                toTarget.y = 0f;
+                if (toTarget.sqrMagnitude <= weaponRange * weaponRange)
+                {
+                    m_CharacterData.Attack(m_CurrentTarget);
+
+                    Vector3 hitPos = m_CurrentTarget.transform.position + Vector3.up * 0.5f;
+                    VFXManager.PlayVFX(VFXType.Hit, hitPos);
+                    
+                    AudioClip hitSound = m_CharacterData.Equipment.Weapon.GetHitSound();
+                    SFXManager.PlaySound(m_CharacterAudio.UseType, 
+                        new SFXManager.PlayData() 
+                        { 
+                            Clip = hitSound, 
+                            PitchMin = 0.8f, 
+                            PitchMax = 1.2f, 
+                            Position = hitPos 
+                        });
+
+                    ApplyKnockback(m_CurrentTarget);
+
+                    // Clear requested target after hit
+                    m_CurrentTarget = null;
+                    m_LastAttackPos = origin;
+                    return;
+                }
+                else
+                {
+                    // Target out of range - clear requested target so fallback detection can run
+                    m_CurrentTarget = null;
+                }
+            }
+
             // Debug visualization of direction & origin
             if (debugDraw)
             {
-                Debug.DrawRay(origin, transform.forward * weaponRange, Color.red, 0.25f);
+                Debug.DrawRay(origin, m_Transform.forward * weaponRange, Color.red, 0.25f);
 
                 const int segments = 16;
                 float step = 360f / segments;
@@ -309,7 +362,7 @@ namespace CreatorKitCodeInternal {
             }
 
             // Flattened forward for cone calculations (ignore Y)
-            Vector3 forwardFlat = transform.forward;
+            Vector3 forwardFlat = m_Transform.forward;
             forwardFlat.y = 0f;
             if (forwardFlat.sqrMagnitude > 0.0001f)
                 forwardFlat.Normalize();
@@ -329,7 +382,7 @@ namespace CreatorKitCodeInternal {
                 if (target.Stats.CurrentHealth <= 0)
                     return;
 
-                Vector3 toTarget = target.transform.position - transform.position;
+                Vector3 toTarget = target.transform.position - m_Transform.position;
                 toTarget.y = 0f;
 
                 float distSq = toTarget.sqrMagnitude;
@@ -352,7 +405,7 @@ namespace CreatorKitCodeInternal {
             int hitCount = Physics.SphereCastNonAlloc(
                 origin,
                 sweepRadius,
-                transform.forward,
+                m_Transform.forward,
                 m_SphereCastHits,
                 weaponRange,
                 attackLayerMask);
@@ -424,7 +477,7 @@ namespace CreatorKitCodeInternal {
             CharacterController targetController = target.GetComponent<CharacterController>();
             if (targetController != null && targetController.enabled)
             {
-                Vector3 knockbackDir = (target.transform.position - transform.position).normalized;
+                Vector3 knockbackDir = (target.transform.position - m_Transform.position).normalized;
                 targetController.Move(knockbackDir * m_KnockbackForce * Time.deltaTime);
             }
         }

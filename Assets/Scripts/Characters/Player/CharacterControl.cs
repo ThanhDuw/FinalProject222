@@ -69,10 +69,14 @@ namespace CreatorKitCodeInternal {
 
         Vector3 m_LastRaycastResult;
 
+        // Cache transform to reduce property access overhead
+        Transform m_Transform;
+
         void Awake()
         {
             Instance = this;
             m_MainCamera = Camera.main;
+            m_Transform = transform;
         }
 
         // Start is called before the first frame update
@@ -84,7 +88,7 @@ namespace CreatorKitCodeInternal {
             m_CharacterController = GetComponent<CharacterController>();
             m_Animator = GetComponentInChildren<Animator>();
 
-            m_LastRaycastResult = transform.position;
+            m_LastRaycastResult = m_Transform.position;
 
             m_SpeedParamID = Animator.StringToHash("Speed");
             m_AttackParamID = Animator.StringToHash("Attack");
@@ -128,14 +132,14 @@ namespace CreatorKitCodeInternal {
             m_CharacterData.OnDamage += () =>
             {
                 m_Animator.SetTrigger(m_HitParamID);
-                m_CharacterAudio.Hit(transform.position);
+                m_CharacterAudio.Hit(m_Transform.position);
             };
         }
 
         // Update is called once per frame
         void Update()
         {
-            Vector3 pos = transform.position;
+            Vector3 pos = m_Transform.position;
         
             if (m_IsKO)
             {
@@ -179,12 +183,13 @@ namespace CreatorKitCodeInternal {
             camRight.Normalize();
 
             Vector3 moveDir = (camRight * h + camForward * v).normalized;
-            float inputMag = new Vector2(h, v).magnitude > 0f ? 1f : 0f;
+            // Avoid allocating a new Vector2 just to check if there's input
+            float inputMag = (Mathf.Abs(h) > 0.001f || Mathf.Abs(v) > 0.001f) ? 1f : 0f;
 
             // Rotate character to face movement direction
             if (moveDir.sqrMagnitude > 0.001f)
             {
-                transform.forward = moveDir;
+                m_Transform.forward = moveDir;
             }
 
             // Apply movement via CharacterController (no NavMeshAgent click-to-move)
@@ -206,14 +211,57 @@ namespace CreatorKitCodeInternal {
             m_Animator.SetFloat(m_SpeedParamID, inputMag);
 
             // COMBAT INPUT: Delegate attack to CombatController.
-            if (Input.GetKeyDown(KeyCode.Space) && m_CombatController != null)
+            // Replaced: space key attack -> click-to-attack on left mouse button.
+            if (Input.GetMouseButtonDown(0) && m_CombatController != null)
             {
-                m_CombatController.TryAttack();
+                // Ignore clicks when over UI
+                if (!EventSystem.current || !EventSystem.current.IsPointerOverGameObject())
+                {
+                    var target = GetClickedCharacterData();
+                    if (target != null)
+                    {
+                        m_CombatController.TryAttackAt(target);
+                        // Also set local current target for UI compatibility
+                        m_CurrentTargetCharacterData = target;
+                    }
+                }
+            }
+
+            // Sync target with CombatController so UISystem displays correct enemy health
+            if (m_CombatController != null)
+            {
+                m_CurrentTargetCharacterData = m_CombatController.CurrentTarget;
             }
         
             //Keyboard shortcuts
             if(Input.GetKeyUp(KeyCode.B))
                 UISystem.Instance.ToggleInventory();
+        }
+
+        private CharacterData GetClickedCharacterData()
+        {
+            Ray ray = m_MainCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+
+            // Raycast against physics, using default distance
+            if (Physics.Raycast(ray, out hit, 100f))
+            {
+                // Try to get CharacterData on clicked object or its parents
+                var cd = hit.collider.GetComponentInParent<CharacterData>();
+                if (cd != null)
+                    return cd;
+
+                // If clicked an Interactable, optionally handle interaction
+                var interact = hit.collider.GetComponentInParent<InteractableObject>();
+                if (interact != null && interact.IsInteractable)
+                {
+                    // If interactable is also attackable by being a CharacterData, it was already returned.
+                    // Otherwise, use InteractWith to handle non-attack interactions.
+                    InteractWith(interact);
+                }
+            }
+
+            return null;
         }
 
         void GoToRespawn()
@@ -222,7 +270,7 @@ namespace CreatorKitCodeInternal {
 
             if (m_CurrentSpawn != null)
             {
-                transform.position = m_CurrentSpawn.transform.position;
+                m_Transform.position = m_CurrentSpawn.transform.position;
             }
             m_IsKO = false;
 
@@ -244,7 +292,6 @@ namespace CreatorKitCodeInternal {
             if(m_Highlighted != null) m_Highlighted.Highlight();
         }
 
-        // Legacy click-to-move / click-to-attack helpers have been removed with the NavMesh refactor.
 
         public void SetNewRespawn(SpawnPoint point)
         {
@@ -277,7 +324,7 @@ namespace CreatorKitCodeInternal {
 
         public void FootstepFrame()
         {
-            Vector3 pos = transform.position;
+            Vector3 pos = m_Transform.position;
         
             m_CharacterAudio.Step(pos);
         
