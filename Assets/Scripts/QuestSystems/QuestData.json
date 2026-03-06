@@ -1,0 +1,87 @@
+﻿{
+  "quests": [
+    {
+      "id": "quest_001",
+      "title": "Nguyên Liệu Sa Mạc",
+      "npc": "Bartender Jack",
+      "location": "Desert_Map",
+      "description": "Quán bar đang hết nước giải khát. Hãy tiêu diệt 10 Cây Xương Rồng ở sa mạc phía Tây và mang nhựa về cho Jack.",
+
+      "requirements": [
+        {
+          "type": "kill",
+          "target": "CactusMonster",
+          "amount": 10
+        },
+        {
+          "type": "collect",
+          "target": "CactusSap",
+          "amount": 10
+        }
+      ],
+
+      "rewards": {
+        "gold": 100,
+        "items": []
+      },
+
+      "prerequisites": []
+    },
+
+    {
+      "id": "quest_002",
+      "title": "Nỗi Lo Vùng Nghĩa Địa",
+      "npc": "Bartender Jack",
+      "location": "Halloween_Map",
+      "description": "Đường sang vùng Halloween bị Skeleton chặn lối. Hãy tiêu diệt 15 Skeleton để thông đường.",
+
+      "requirements": [
+        {
+          "type": "kill",
+          "target": "Skeleton",
+          "amount": 15
+        }
+      ],
+
+      "rewards": {
+        "gold": 50,
+        "items": [
+          {
+            "id": "axe_basic",
+            "amount": 1
+          }
+        ]
+      },
+
+      "prerequisites": [ "quest_001" ]
+    },
+
+    {
+      "id": "quest_003",
+      "title": "Truy Quét Pháp Sư Xương",
+      "npc": "Sheriff Wyatt",
+      "location": "Halloween_Graveyard",
+      "description": "Mage Skeleton đang triệu hồi quân đoàn bóng tối. Hãy tiêu diệt hắn để cứu ngôi làng.",
+
+      "requirements": [
+        {
+          "type": "kill",
+          "target": "SkeletonMageBoss",
+          "amount": 1
+        }
+      ],
+
+      "rewards": {
+        "gold": 300,
+        "items": [
+          {
+            "id": "hero_badge",
+            "amount": 1
+          }
+        ]
+      },
+
+      "prerequisites": [ "quest_001" ]
+    }
+  ]
+}

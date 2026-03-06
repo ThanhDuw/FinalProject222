@@ -195,8 +195,6 @@ MonoBehaviour:
     m_Bits: 2048
   debugDraw: 1
   weaponLocator: {fileID: 6662909602592352112}
-  m_AttackConeAngle: 60
-  m_LungeDistance: 0.5
   m_KnockbackForce: 2
   m_SearchRadius: 8
 --- !u!143 &7452427305609676561
@@ -860,6 +858,10 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5115311140117641433, guid: 32695873568dfd149b83eaec94075c15,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2446656269560849473}
     - targetCorrespondingSourceObject: {fileID: 5115311140672747404, guid: 32695873568dfd149b83eaec94075c15,
         type: 3}
       insertIndex: -1
@@ -919,3 +921,25 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 7245983633816032189}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2482569542042741604 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5115311140117641433, guid: 32695873568dfd149b83eaec94075c15,
+    type: 3}
+  m_PrefabInstance: {fileID: 7245983633816032189}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2446656269560849473
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2482569542042741604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cbfedc995c93904db9118dba8f456ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FPSDisplay
+  updateInterval: 0.5
+  margin: {x: 10, y: 10}
+  textColor: {r: 1, g: 1, b: 1, a: 1}
+  fontSize: 14
