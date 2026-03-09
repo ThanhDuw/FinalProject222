@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: Quest_02_NoiLoVungNghiaDia
   m_EditorClassIdentifier: Assembly-CSharp::QuestData
   questID: quest_02_noi_lo_vung_nghia_dia
-  questName: Noi Lo Vung Nghia Dia
-  description: "Tinh hinh xau di \u2014 Skeleton bat dau tan cong lang. Hay den nghia
-    dia va tieu diet 15 Skeleton de bao ve noi day."
+  questName: Graveyard Trouble
+  description: "The situation is getting worse \u2014 Skeletons have started attacking
+    the village outskirts. Head to the graveyard and eliminate the undead threat
+    before it spreads."
   objectives:
   - objectiveID: obj_02_kill_skeleton
-    description: Tieu diet Skeleton (0/15)
+    description: Eliminate Skeletons (0/15)
     type: 0
     targetID: Skeleton
     requiredAmount: 15

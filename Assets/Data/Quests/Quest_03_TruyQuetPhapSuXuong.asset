@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: Quest_03_TruyQuetPhapSuXuong
   m_EditorClassIdentifier: Assembly-CSharp::QuestData
   questID: quest_03_truy_quet_phap_su_xuong
-  questName: Truy Quet Phap Su Xuong
-  description: Canh sat truong phat hien nguon goc cua dan Skeleton chinh la Mage
-    Skeleton. Hay tieu diet han de giai thoat vung dat khoi bong toi.
+  questName: Hunt the Bone Mage
+  description: "Intelligence confirms it \u2014 the Mage Skeleton is the one raising
+    the undead army. Put an end to this once and for all. Take down the Bone Mage
+    and free this land from darkness."
   objectives:
   - objectiveID: obj_03_kill_boss
-    description: Tieu diet Mage Skeleton (0/1)
+    description: Defeat the Mage Skeleton (0/1)
     type: 0
     targetID: MageSkeleton
     requiredAmount: 1

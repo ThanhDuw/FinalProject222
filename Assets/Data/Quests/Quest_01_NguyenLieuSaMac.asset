@@ -13,14 +13,20 @@ MonoBehaviour:
   m_Name: Quest_01_NguyenLieuSaMac
   m_EditorClassIdentifier: Assembly-CSharp::QuestData
   questID: quest_01_nguyen_lieu_sa_mac
-  questName: Nguyen Lieu Sa Mac
-  description: Chu quan bar nho ban thu thap nhua tu 10 Cay Xuong Rong tai khu vuc
-    sa mac phia Tay.
+  questName: Desert Cactus Hunt
+  description: "The desert has grown dangerous \u2014 mutant cacti are attacking
+    travellers on the road. Clear the path by eliminating the Cactus enemies lurking
+    in the wasteland."
   objectives:
-  - objectiveID: obj_01_collect_cactus
-    description: Thu thap nhua Cay Xuong Rong (0/10)
-    type: 1
-    targetID: CactusItem
-    requiredAmount: 10
+  - objectiveID: obj_01_kill_cactus
+    description: Eliminate Cactus enemies (0/5)
+    type: 0
+    targetID: CactusEnemy
+    requiredAmount: 5
+  - objectiveID: obj_01_kill_elite_cactus
+    description: Defeat the Elite Cactus (0/1)
+    type: 0
+    targetID: EliteCactus
+    requiredAmount: 1
   experienceReward: 50
   goldReward: 100
