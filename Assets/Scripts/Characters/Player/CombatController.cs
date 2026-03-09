@@ -15,7 +15,7 @@ namespace CreatorKitCodeInternal {
         [Header("References")]
         [SerializeField] private Transform weaponLocator;              // Optional explicit weapon origin
         [SerializeField] private float m_KnockbackForce = 2f;    // Enemy knockback magnitude
-        [SerializeField] private float m_SearchRadius = 8f;      // How far to search for weapon range
+        // m_SearchRadius removed (unused field)apon range
 
         private Animator m_Animator;
         private CharacterData m_CharacterData;
@@ -110,24 +110,27 @@ namespace CreatorKitCodeInternal {
             }
         }
 
-        void OnDrawGizmosSelected()
+void OnDrawGizmosSelected()
         {
             if (!debugDraw)
                 return;
 
+            // m_Transform may be null in Edit Mode (Awake hasn't run yet)
+            Transform t = m_Transform != null ? m_Transform : transform;
+
             // Draw attack cone visualization
-            Vector3 attackPos = Application.isPlaying ? GetAttackOrigin() : m_Transform.position + m_Transform.forward * 1f;
+            Vector3 attackPos = Application.isPlaying ? GetAttackOrigin() : t.position + t.forward * 1f;
             float weaponRange = GetCurrentWeaponRange();
             float halfAngle = attackConeAngle * 0.5f;
 
             Gizmos.color = Color.red;
-            Vector3 leftDir = Quaternion.Euler(0, -halfAngle, 0) * m_Transform.forward;
-            Vector3 rightDir = Quaternion.Euler(0, halfAngle, 0) * m_Transform.forward;
+            Vector3 leftDir = Quaternion.Euler(0, -halfAngle, 0) * t.forward;
+            Vector3 rightDir = Quaternion.Euler(0, halfAngle, 0) * t.forward;
 
-            Gizmos.DrawLine(m_Transform.position, m_Transform.position + leftDir * weaponRange);
-            Gizmos.DrawLine(m_Transform.position, m_Transform.position + rightDir * weaponRange);
-            Gizmos.DrawLine(m_Transform.position + leftDir * weaponRange, 
-                           m_Transform.position + rightDir * weaponRange);
+            Gizmos.DrawLine(t.position, t.position + leftDir * weaponRange);
+            Gizmos.DrawLine(t.position, t.position + rightDir * weaponRange);
+            Gizmos.DrawLine(t.position + leftDir * weaponRange,
+                           t.position + rightDir * weaponRange);
 
             // Draw search sphere
             Gizmos.color = new Color(1, 1, 0, 0.3f);

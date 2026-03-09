@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a154abb81383f543ad9e8c6653a7d4d, type: 3}
+  m_Name: Quest_02_NoiLoVungNghiaDia
+  m_EditorClassIdentifier: Assembly-CSharp::QuestData
+  questID: quest_02_noi_lo_vung_nghia_dia
+  questName: Noi Lo Vung Nghia Dia
+  description: "Tinh hinh xau di \u2014 Skeleton bat dau tan cong lang. Hay den nghia
+    dia va tieu diet 15 Skeleton de bao ve noi day."
+  objectives:
+  - objectiveID: obj_02_kill_skeleton
+    description: Tieu diet Skeleton (0/15)
+    type: 0
+    targetID: Skeleton
+    requiredAmount: 15
+  experienceReward: 120
+  goldReward: 250

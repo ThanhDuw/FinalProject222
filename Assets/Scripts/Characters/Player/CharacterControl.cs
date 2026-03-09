@@ -23,6 +23,9 @@ namespace CreatorKitCodeInternal {
     
         [Header("Audio")]
         public AudioClip[] SpurSoundClips;
+
+        [Header("Camera")]
+        [SerializeField] private float cameraRotateSpeed = 180f; // degrees per second when holding RMB
     
         Animator m_Animator;
         CharacterController m_CharacterController;   // MOVEMENT REFACTOR: CharacterController-based movement
@@ -44,7 +47,7 @@ namespace CreatorKitCodeInternal {
         int m_InteractableLayer;
         int m_LevelLayer;
         Collider m_TargetCollider;
-        InteractableObject m_TargetInteractable = null;
+        // m_TargetInteractable removed (unused) = null;
         Camera m_MainCamera;
 
         CharacterAudio m_CharacterAudio;
@@ -54,7 +57,7 @@ namespace CreatorKitCodeInternal {
         int m_TargetLayer;
         CharacterData m_CurrentTargetCharacterData = null;
         // Flag used by legacy click-to-attack flow to clear target after attack completes.
-        bool m_ClearPostAttack = false;
+        // (removed unused field m_ClearPostAttack)= false;
 
         SpawnPoint m_CurrentSpawn = null;
     
@@ -65,7 +68,7 @@ namespace CreatorKitCodeInternal {
             ATTACKING
         }
 
-        State m_CurrentState;
+        // (removed unused field m_CurrentState)dntState;
 
         Vector3 m_LastRaycastResult;
 
@@ -122,7 +125,7 @@ namespace CreatorKitCodeInternal {
             m_LevelLayer = 1 << LayerMask.NameToLayer("Level");
             m_TargetLayer = 1 << LayerMask.NameToLayer("Target");
 
-            m_CurrentState = State.DEFAULT;
+        // (removed: was m_CurrentState = State.DEFAULT)ULT;
 
             m_CharacterAudio = GetComponent<CharacterAudio>();
 
@@ -207,6 +210,21 @@ namespace CreatorKitCodeInternal {
                     CameraController.Instance.Zoom(-mouseWheel * Time.deltaTime * 20.0f);
             }
         
+            // New: rotate camera around player while holding right mouse button
+            if (Input.GetMouseButton(1))
+            {
+                Vector3 view = m_MainCamera.ScreenToViewportPoint(Input.mousePosition);
+                if (view.x > 0f && view.x < 1f && view.y > 0f && view.y < 1f)
+                {
+                    float mouseX = Input.GetAxis("Mouse X");
+                    if (!Mathf.Approximately(mouseX, 0f) && CameraController.Instance != null)
+                    {
+                        // Rotate the camera GameObject around the player's Y axis (yaw) based on mouse movement.
+                        CameraController.Instance.transform.RotateAround(m_Transform.position, Vector3.up, mouseX * cameraRotateSpeed * Time.deltaTime);
+                    }
+                }
+            }
+        
             // Update animator speed parameter from input magnitude (not NavMeshAgent).
             m_Animator.SetFloat(m_SpeedParamID, inputMag);
 
@@ -275,9 +293,9 @@ namespace CreatorKitCodeInternal {
             m_IsKO = false;
 
             m_CurrentTargetCharacterData = null;
-            m_TargetInteractable = null;
+        // (removed: m_TargetInteractable = null)ull;
 
-            m_CurrentState = State.DEFAULT;
+        // (removed: was m_CurrentState = State.DEFAULT)ULT;
         
             m_Animator.SetTrigger(m_RespawnParamID);
         
