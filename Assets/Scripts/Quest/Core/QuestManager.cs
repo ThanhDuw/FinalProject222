@@ -19,7 +19,6 @@ public class QuestManager : MonoBehaviour
     [Header("Sub-systems")]
     [SerializeField] private QuestTracker    questTracker;
     [SerializeField] private ObjectiveSystem objectiveSystem;
-    [SerializeField] private SaveSystem      saveSystem;
 
     // ── Runtime state ────────────────────────────────────────────────────────
     private Dictionary<string, QuestState> questStates = new Dictionary<string, QuestState>();
@@ -42,53 +41,6 @@ public class QuestManager : MonoBehaviour
 
     private void Start()
     {
-        // Load saved quest states (and per-objective progress when available)
-        SaveSystem.Wrapper wrapper = null;
-        if (saveSystem != null)
-        {
-            wrapper = saveSystem.LoadQuestData();
-        }
-
-        // If we have wrapper data, restore states and detailed objective counts
-        if (wrapper != null && wrapper.quests != null)
-        {
-            foreach (var saved in wrapper.quests)
-            {
-                if (saved == null || string.IsNullOrEmpty(saved.questID)) continue;
-                questStates[saved.questID] = saved.state;
-
-                // If quest was active when saved, re-create tracking and restore objective counts
-                if (saved.state == QuestState.Active && questDatabase != null && questTracker != null)
-                {
-                    var q = questDatabase.GetQuestByID(saved.questID);
-                    if (q != null)
-                    {
-                        questTracker.TrackQuest(q);
-
-                        // Restore objective counts
-                        var progress = questTracker.GetProgress(q.questID);
-                        if (progress != null && saved.objectives != null)
-                        {
-                            foreach (var o in saved.objectives)
-                            {
-                                if (o == null || string.IsNullOrEmpty(o.objectiveID)) continue;
-                                // single assignment (previous code duplicated the same branch)
-                                progress.objectiveCounts[o.objectiveID] = o.currentCount;
-                            }
-
-                            // Notify listeners that progress has been restored
-                            // Cannot invoke QuestTracker's event from here (only the declaring class can invoke its event)
-                            // Use the public helper on QuestTracker to notify listeners instead.
-                            questTracker.NotifyProgressUpdated(progress);
-                        }
-
-                        // Defer firing started event so UI components that subscribe in Start() won't miss it
-                        deferredStartedNotifications.Add(q);
-                    }
-                }
-            }
-        }
-
         // Ensure known quests have entries (if not present in save)
         if (questDatabase != null)
         {
@@ -168,7 +120,6 @@ public class QuestManager : MonoBehaviour
 
         questStates[quest.questID] = QuestState.Active;
         questTracker?.TrackQuest(quest);
-        saveSystem?.SaveQuestData(questStates, questTracker?.GetAllActiveProgresses());
         OnQuestStarted?.Invoke(quest);
     }
 
@@ -183,9 +134,8 @@ public class QuestManager : MonoBehaviour
         if (quest != null)
             OnQuestCompleted?.Invoke(quest);
 
-        // Stop tracking and persist
+        // Stop tracking
         questTracker?.UntrackQuest(questID);
-        saveSystem?.SaveQuestData(questStates, questTracker?.GetAllActiveProgresses());
     }
 
     public void FailQuest(string questID)
@@ -200,7 +150,6 @@ public class QuestManager : MonoBehaviour
             OnQuestFailed?.Invoke(quest);
 
         questTracker?.UntrackQuest(questID);
-        saveSystem?.SaveQuestData(questStates, questTracker?.GetAllActiveProgresses());
     }
 
     public QuestState GetQuestState(string questID)

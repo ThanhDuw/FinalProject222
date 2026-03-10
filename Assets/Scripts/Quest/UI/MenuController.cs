@@ -21,7 +21,6 @@ public class MenuController : MonoBehaviour
     [Header("Quest Log")]
 
     [SerializeField] private Button     questButton;
-    [SerializeField] private Button     closeQuestButton;
     [SerializeField] private QuestLogUI questLogUI;
 
 private void Start()
