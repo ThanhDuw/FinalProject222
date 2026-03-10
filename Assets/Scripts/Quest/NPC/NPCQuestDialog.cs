@@ -204,12 +204,20 @@ public class NPCQuestDialog : MonoBehaviour
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>Returns true when ALL prerequisiteQuestIDs are in Completed state.</summary>
-    private bool ArePrerequisitesMet()
+private bool ArePrerequisitesMet()
     {
         if (prerequisiteQuestIDs == null || prerequisiteQuestIDs.Count == 0) return true;
-        if (QuestManager.Instance == null) return true; // can't verify - allow through
+
+        // Fail-closed: nếu QuestManager chưa sẵn sàng, coi như prerequisites chưa thoả
+        if (QuestManager.Instance == null)
+        {
+            Debug.LogWarning($"[NPCQuestDialog] '{name}': QuestManager.Instance is null — treating prerequisites as NOT met.");
+            return false;
+        }
+
         foreach (var id in prerequisiteQuestIDs)
             if (QuestManager.Instance.GetQuestState(id) != QuestState.Completed) return false;
+
         return true;
     }
 
@@ -245,7 +253,7 @@ public class NPCQuestDialog : MonoBehaviour
     private string BuildActiveText(QuestData q)
     {
         string progress = "";
-        var tracker = FindObjectOfType<QuestTracker>();
+        var tracker = FindFirstObjectByType<QuestTracker>();
         if (tracker != null && q.objectives != null)
         {
             var prog = tracker.GetProgress(q.questID);
