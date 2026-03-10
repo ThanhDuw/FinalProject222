@@ -4101,7 +4101,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b75ce12845331294d86b8b3fdfa0b63b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectiveSystem
-  questTracker: {fileID: 0}
+  questTracker: {fileID: 1262466642}
 --- !u!114 &1262466642
 MonoBehaviour:
   m_ObjectHideFlags: 0
