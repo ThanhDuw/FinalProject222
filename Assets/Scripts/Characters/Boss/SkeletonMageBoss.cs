@@ -8,7 +8,6 @@ namespace CreatorKitCode
 {
     public class SkeletonMageBoss : MonoBehaviour
     {
-        // ==================== ENUMS ====================
         public enum BossState { IDLE, CHASING, CASTING, DEAD }
 
         // ==================== REFERENCES ====================
@@ -30,13 +29,14 @@ namespace CreatorKitCode
         [Header("Skill 1 - Lightning Strike")]
         [SerializeField] private float m_LightningRange    = 12f;
         [SerializeField] private float m_LightningDamage   = 35f;
-        [SerializeField] private float m_LightningCastTime = 1.2f;
+        [SerializeField] private float m_LightningCastTime = 2.5f;
         [SerializeField] private float m_LightningCooldown = 6f;
         private float m_LightningCooldownTimer = 0f;
 
         // ==================== SKILL 2 - DARK MAGIC SHOOT ====================
         [Header("Skill 2 - Dark Magic Shoot")]
         [SerializeField] private float m_DarkMagicRange    = 10f;
+        [SerializeField] private float m_DarkMagicHitRadius = 4f;
         [SerializeField] private float m_DarkMagicDamage   = 30f;
         [SerializeField] private float m_DarkMagicCastTime = 0.8f;
         [SerializeField] private float m_DarkMagicCooldown = 4f;
@@ -54,18 +54,16 @@ namespace CreatorKitCode
         private static readonly int ANIM_HIT    = Animator.StringToHash("Hit");
 
         // ==================== LIFECYCLE ====================
-private void Awake()
+        private void Awake()
         {
             m_Agent               = GetComponent<NavMeshAgent>();
-            m_Animator            = GetComponentInChildren<Animator>(); // Animator nam tren Skeleton_Mage_Boss_Mesh child
+            m_Animator            = GetComponentInChildren<Animator>();
             m_CharacterData       = GetComponent<CharacterData>();
             m_LightningController = GetComponent<LightningStrikeController>();
         }
 
         private void Start()
         {
-            // CRITICAL: Phai goi Init() de CurrentHealth = baseStats.health
-            // Neu khong CurrentHealth = 0 (default int) -> boss chet ngay frame dau -> Destroy(5f)
             if (m_CharacterData != null)
                 m_CharacterData.Init();
         }
@@ -141,9 +139,16 @@ private void Awake()
             m_IsCasting = true;
             float castTime = skillIndex == 1 ? m_LightningCastTime : m_DarkMagicCastTime;
 
+            // Skill1 (Lightning): lam cham animation x0.5 de thay ro dong tac phap thuat
+            if (skillIndex == 1)
+                m_Animator.speed = 0.5f;
+
             m_Animator.SetTrigger(skillIndex == 1 ? ANIM_SKILL1 : ANIM_SKILL2);
 
             yield return new WaitForSeconds(castTime);
+
+            // Khoi phuc toc do binh thuong
+            m_Animator.speed = 1f;
 
             if (m_CurrentState != BossState.DEAD)
             {
@@ -189,11 +194,17 @@ private void Awake()
             GameObject vfx = Instantiate(m_DarkMagicPrefab, spawnPos, spawnRot);
             Destroy(vfx, 3f);
 
+            // Chi gay sat thuong neu player dung trong m_DarkMagicHitRadius
+            // Tranh truong hop damage deal tu xa khi player da chay khoi vung hieu ung
             if (m_Target != null)
             {
-                int dmg = Mathf.RoundToInt(m_DarkMagicDamage);
-                m_Target.Stats.ChangeHealth(-dmg);
-                DamageUI.Instance.NewDamage(dmg, m_Target.transform.position);
+                float distToTarget = Vector3.Distance(transform.position, m_Target.transform.position);
+                if (distToTarget <= m_DarkMagicHitRadius)
+                {
+                    int dmg = Mathf.RoundToInt(m_DarkMagicDamage);
+                    m_Target.Stats.ChangeHealth(-dmg);
+                    DamageUI.Instance.NewDamage(dmg, m_Target.transform.position);
+                }
             }
 
             m_DarkMagicCooldownTimer = m_DarkMagicCooldown;
@@ -229,6 +240,7 @@ private void Awake()
             StopAllCoroutines();
 
             m_Agent.enabled = false;
+            m_Animator.speed = 1f;
             m_Animator.SetTrigger(ANIM_DEATH);
             GetComponent<Collider>().enabled = false;
             Destroy(gameObject, 5f);

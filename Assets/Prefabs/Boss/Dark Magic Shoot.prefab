@@ -74,7 +74,7 @@ GameObject:
   - component: {fileID: 198054090994326888}
   - component: {fileID: 199011252875170284}
   m_Layer: 0
-  m_Name: Dard magic shoot
+  m_Name: Dark Magic Shoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
