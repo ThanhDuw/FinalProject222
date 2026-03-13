@@ -14,7 +14,7 @@ namespace CreatorKitCode
         // ==================== REFERENCES ====================
         [Header("References")]
         [SerializeField] private Transform m_CastPoint;
-        [SerializeField] private GameObject m_FireballPrefab;
+        [SerializeField] private GameObject m_DarkMagicPrefab;
         [SerializeField] private CharacterData m_CharacterData;
         private LightningStrikeController m_LightningController;
         private NavMeshAgent m_Agent;
@@ -26,51 +26,57 @@ namespace CreatorKitCode
         [SerializeField] private float m_DetectionRadius = 15f;
         [SerializeField] private LayerMask m_PlayerLayer;
 
-        // ==================== SKILL 1 — LIGHTNING STRIKE ====================
-        [Header("Skill 1 — Lightning Strike")]
-        [SerializeField] private float m_LightningRange = 12f;
-        [SerializeField] private float m_LightningDamage = 35f;
+        // ==================== SKILL 1 - LIGHTNING STRIKE ====================
+        [Header("Skill 1 - Lightning Strike")]
+        [SerializeField] private float m_LightningRange    = 12f;
+        [SerializeField] private float m_LightningDamage   = 35f;
         [SerializeField] private float m_LightningCastTime = 1.2f;
         [SerializeField] private float m_LightningCooldown = 6f;
         private float m_LightningCooldownTimer = 0f;
 
-        // ==================== SKILL 2 — FIREBALL ====================
-        [Header("Skill 2 — Fireball")]
-        [SerializeField] private float m_FireballRange = 10f;
-        [SerializeField] private float m_FireballCastTime = 0.8f;
-        [SerializeField] private float m_FireballCooldown = 4f;
-        private float m_FireballCooldownTimer = 0f;
+        // ==================== SKILL 2 - DARK MAGIC SHOOT ====================
+        [Header("Skill 2 - Dark Magic Shoot")]
+        [SerializeField] private float m_DarkMagicRange    = 10f;
+        [SerializeField] private float m_DarkMagicDamage   = 30f;
+        [SerializeField] private float m_DarkMagicCastTime = 0.8f;
+        [SerializeField] private float m_DarkMagicCooldown = 4f;
+        private float m_DarkMagicCooldownTimer = 0f;
 
         // ==================== RUNTIME STATE ====================
         private BossState m_CurrentState = BossState.IDLE;
         private bool m_IsCasting = false;
 
-        // ==================== ANIMATOR PARAMS (CONSTANTS) ====================
-        private static readonly int ANIM_SPEED   = Animator.StringToHash("Speed");
-        private static readonly int ANIM_SKILL1  = Animator.StringToHash("Skill1");
-        private static readonly int ANIM_SKILL2  = Animator.StringToHash("Skill2");
-        private static readonly int ANIM_DEATH   = Animator.StringToHash("Death");
-        private static readonly int ANIM_HIT     = Animator.StringToHash("Hit");
+        // ==================== ANIMATOR PARAMS ====================
+        private static readonly int ANIM_SPEED  = Animator.StringToHash("Speed");
+        private static readonly int ANIM_SKILL1 = Animator.StringToHash("Skill1");
+        private static readonly int ANIM_SKILL2 = Animator.StringToHash("Skill2");
+        private static readonly int ANIM_DEATH  = Animator.StringToHash("Death");
+        private static readonly int ANIM_HIT    = Animator.StringToHash("Hit");
 
-        // =============================================================
+        // ==================== LIFECYCLE ====================
 private void Awake()
         {
             m_Agent               = GetComponent<NavMeshAgent>();
-            m_Animator            = GetComponent<Animator>();
+            m_Animator            = GetComponentInChildren<Animator>(); // Animator nam tren Skeleton_Mage_Boss_Mesh child
             m_CharacterData       = GetComponent<CharacterData>();
             m_LightningController = GetComponent<LightningStrikeController>();
         }
 
-private void Start() { }
+        private void Start()
+        {
+            // CRITICAL: Phai goi Init() de CurrentHealth = baseStats.health
+            // Neu khong CurrentHealth = 0 (default int) -> boss chet ngay frame dau -> Destroy(5f)
+            if (m_CharacterData != null)
+                m_CharacterData.Init();
+        }
 
-private void OnDestroy() { }
+        private void OnDestroy() { }
 
-        // ==================== UPDATE LOOP ====================
-private void Update()
+        // ==================== UPDATE ====================
+        private void Update()
         {
             if (m_CurrentState == BossState.DEAD) return;
 
-            // Poll death — CharacterData has no OnDeath event
             if (m_CharacterData != null && m_CharacterData.Stats.CurrentHealth <= 0)
             {
                 HandleDeath();
@@ -91,7 +97,7 @@ private void Update()
         private void TickCooldowns()
         {
             if (m_LightningCooldownTimer > 0f) m_LightningCooldownTimer -= Time.deltaTime;
-            if (m_FireballCooldownTimer  > 0f) m_FireballCooldownTimer  -= Time.deltaTime;
+            if (m_DarkMagicCooldownTimer > 0f) m_DarkMagicCooldownTimer -= Time.deltaTime;
         }
 
         // ==================== STATE MACHINE ====================
@@ -112,11 +118,10 @@ private void Update()
 
             float dist = Vector3.Distance(transform.position, m_Target.transform.position);
 
-            // --- Check skill range ---
             bool canLightning = m_LightningCooldownTimer <= 0f && dist <= m_LightningRange;
-            bool canFireball  = m_FireballCooldownTimer  <= 0f && dist <= m_FireballRange;
+            bool canDarkMagic = m_DarkMagicCooldownTimer <= 0f && dist <= m_DarkMagicRange;
 
-            if (canLightning || canFireball)
+            if (canLightning || canDarkMagic)
             {
                 m_Agent.ResetPath();
                 m_Animator.SetFloat(ANIM_SPEED, 0f);
@@ -125,7 +130,6 @@ private void Update()
                 return;
             }
 
-            // --- Chase player ---
             m_Agent.SetDestination(m_Target.transform.position);
             float speed = m_Agent.velocity.magnitude;
             m_Animator.SetFloat(ANIM_SPEED, speed, 0.1f, Time.deltaTime);
@@ -135,7 +139,7 @@ private void Update()
         private IEnumerator CastSkill(int skillIndex)
         {
             m_IsCasting = true;
-            float castTime = skillIndex == 1 ? m_LightningCastTime : m_FireballCastTime;
+            float castTime = skillIndex == 1 ? m_LightningCastTime : m_DarkMagicCastTime;
 
             m_Animator.SetTrigger(skillIndex == 1 ? ANIM_SKILL1 : ANIM_SKILL2);
 
@@ -144,25 +148,23 @@ private void Update()
             if (m_CurrentState != BossState.DEAD)
             {
                 if (skillIndex == 1) ExecuteLightningStrike();
-                else                 ExecuteFireball();
+                else                 ExecuteDarkMagicShoot();
             }
 
             m_IsCasting = false;
             TransitionTo(BossState.CHASING);
         }
 
-private void ExecuteLightningStrike()
+        private void ExecuteLightningStrike()
         {
             if (m_Target == null) return;
 
             if (m_LightningController != null)
             {
-                // Delegate toan bo trinh tu strike cho LightningStrikeController
                 m_LightningController.ExecuteSequence(m_Target.transform.position, m_CharacterData);
             }
             else
             {
-                // Fallback neu khong co controller: chi gay 1 hit don gian
                 int dmg = Mathf.RoundToInt(m_LightningDamage);
                 m_Target.Stats.ChangeHealth(-dmg);
                 DamageUI.Instance.NewDamage(dmg, m_Target.transform.position);
@@ -171,16 +173,30 @@ private void ExecuteLightningStrike()
             m_LightningCooldownTimer = m_LightningCooldown;
         }
 
-        private void ExecuteFireball()
+        private void ExecuteDarkMagicShoot()
         {
-            if (m_FireballPrefab == null || m_CastPoint == null) return;
+            if (m_DarkMagicPrefab == null || m_CastPoint == null) return;
 
-            GameObject fb = Instantiate(m_FireballPrefab, m_CastPoint.position, Quaternion.identity);
-            FireballProjectile proj = fb.GetComponent<FireballProjectile>();
-            if (proj != null)
-                proj.Launch(m_Target.transform, m_CharacterData);
+            Vector3 spawnPos = m_CastPoint.position;
+            Quaternion spawnRot = Quaternion.identity;
+            if (m_Target != null)
+            {
+                Vector3 dir = (m_Target.transform.position - spawnPos).normalized;
+                if (dir != Vector3.zero)
+                    spawnRot = Quaternion.LookRotation(dir);
+            }
 
-            m_FireballCooldownTimer = m_FireballCooldown;
+            GameObject vfx = Instantiate(m_DarkMagicPrefab, spawnPos, spawnRot);
+            Destroy(vfx, 3f);
+
+            if (m_Target != null)
+            {
+                int dmg = Mathf.RoundToInt(m_DarkMagicDamage);
+                m_Target.Stats.ChangeHealth(-dmg);
+                DamageUI.Instance.NewDamage(dmg, m_Target.transform.position);
+            }
+
+            m_DarkMagicCooldownTimer = m_DarkMagicCooldown;
         }
 
         // ==================== DETECTION ====================
@@ -214,7 +230,6 @@ private void ExecuteLightningStrike()
 
             m_Agent.enabled = false;
             m_Animator.SetTrigger(ANIM_DEATH);
-
             GetComponent<Collider>().enabled = false;
             Destroy(gameObject, 5f);
         }
@@ -229,7 +244,7 @@ private void ExecuteLightningStrike()
             Gizmos.DrawWireSphere(transform.position, m_LightningRange);
 
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, m_FireballRange);
+            Gizmos.DrawWireSphere(transform.position, m_DarkMagicRange);
         }
     }
 }
