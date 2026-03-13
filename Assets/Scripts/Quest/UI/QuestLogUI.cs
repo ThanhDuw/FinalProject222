@@ -14,7 +14,7 @@ public class QuestLogUI : MonoBehaviour
     [SerializeField] private GameObject      questEntryPrefab;
     [SerializeField] private Text             detailTitle;
     [SerializeField] private Text             detailDescription;
-    [SerializeField] private Transform       detailObjectivesContainer;
+    
     [SerializeField] private Text             rewardText;
     [SerializeField] private Text             requestText;
 
@@ -22,24 +22,20 @@ public class QuestLogUI : MonoBehaviour
     private bool subscribed = false;
     private Coroutine waitForManagerCoroutine;
 
-    private void OnEnable()
+private void Awake()
     {
-        // Try to subscribe immediately; if QuestManager.Instance not ready, start waiting coroutine
-        TrySubscribe();
-
+        // Hide visual panel; script stays ACTIVE to receive events even when panel is hidden
         if (questLogPanel != null)
             questLogPanel.SetActive(false);
     }
 
-    private void OnDisable()
+    private void Start()
     {
-        Unsubscribe();
-        if (waitForManagerCoroutine != null)
-        {
-            StopCoroutine(waitForManagerCoroutine);
-            waitForManagerCoroutine = null;
-        }
+        // Subscribe in Start so QuestManager.Instance has already initialized in its own Awake
+        TrySubscribe();
     }
+
+
 
     private void TrySubscribe()
     {
@@ -93,8 +89,9 @@ public class QuestLogUI : MonoBehaviour
         Unsubscribe();
     }
 
-    private void OnQuestChanged(QuestData _)
+private void OnQuestChanged(QuestData _)
     {
+        // Refresh even when panel is hidden — data stays current
         RefreshAll();
     }
 
@@ -119,19 +116,30 @@ public class QuestLogUI : MonoBehaviour
         if (questLogPanel.activeSelf) RefreshAll();
     }
 
-    private void RefreshAll()
+private void RefreshAll()
     {
-        // Combine all quests from database via QuestManager by states
-        var all = new List<QuestData>();
         if (QuestManager.Instance == null) return;
 
-        // Add Active, Inactive, Completed, Failed (grouping optional)
+        var all = new List<QuestData>();
         all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.Active));
         all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.Inactive));
         all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.Completed));
         all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.Failed));
 
         PopulateList(all);
+
+        // Auto-select: first Active quest, or first quest overall
+        QuestData autoSelect = null;
+        foreach (var q in all)
+        {
+            if (QuestManager.Instance.GetQuestState(q.questID) == QuestState.Active)
+            { autoSelect = q; break; }
+        }
+        if (autoSelect == null && all.Count > 0)
+            autoSelect = all[0];
+
+        if (autoSelect != null)
+            ShowQuestDetail(autoSelect);
     }
 
 private void PopulateList(List<QuestData> quests)
@@ -251,62 +259,17 @@ private void ShowQuestDetail(QuestData quest)
     {
         if (quest == null) return;
 
-        // Quest_Name
         if (detailTitle != null)
             detailTitle.text = quest.questName;
 
-        // Description_Content
         if (detailDescription != null)
             detailDescription.text = quest.description;
 
-        // Request_Text — danh sách objectives dạng text
         if (requestText != null)
             requestText.text = BuildRequestText(quest);
 
-        // Reward_Text — phần thưởng
         if (rewardText != null)
             rewardText.text = BuildRewardText(quest);
-
-        // ObjectivesContainer — dynamic rows chi tiết tiến độ
-        if (detailObjectivesContainer != null)
-        {
-            for (int i = detailObjectivesContainer.childCount - 1; i >= 0; i--)
-                Destroy(detailObjectivesContainer.GetChild(i).gameObject);
-
-            var fallbackFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (fallbackFont == null) fallbackFont = GUI.skin?.font;
-
-            var tracker = (QuestManager.Instance != null)
-                ? QuestManager.Instance.GetComponent<QuestTracker>()
-                : null;
-            QuestProgress progress = tracker?.GetProgress(quest.questID);
-
-            foreach (var obj in quest.objectives)
-            {
-                int cur = 0;
-                progress?.objectiveCounts.TryGetValue(obj.objectiveID, out cur);
-                bool done = cur >= obj.requiredAmount;
-
-                var go = new GameObject("Obj_" + obj.objectiveID);
-                go.transform.SetParent(detailObjectivesContainer, false);
-
-                var le = go.AddComponent<LayoutElement>();
-                le.preferredHeight = 20f;
-                le.flexibleWidth   = 1f;
-
-                var txt = go.AddComponent<Text>();
-                txt.font          = fallbackFont;
-                txt.fontSize      = 13;
-                txt.alignment     = TextAnchor.MiddleLeft;
-                txt.raycastTarget = false;
-                txt.color = done
-                    ? new Color(0.4f, 0.9f, 0.4f)
-                    : Color.white;
-                txt.text = done
-                    ? string.Format("\u2713 {0}", obj.description)
-                    : string.Format("\u2022 {0}  {1}/{2}", obj.description, cur, obj.requiredAmount);
-            }
-        }
     }
 
     private string BuildRequestText(QuestData quest)
