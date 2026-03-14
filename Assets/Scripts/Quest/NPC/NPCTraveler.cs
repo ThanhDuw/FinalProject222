@@ -18,13 +18,10 @@ using UnityEngine;
 ///   2. Player GameObject tagged "Player"
 ///   3. Assign TravelMenuUI reference in Inspector
 ///   4. Populate availableDestinations list with TravelDestinationData ScriptableObjects
-///   5. (Optional) Assign interactPrompt — a child world-space "E" label GameObject
+///   5. (Optional) Assign interactPrompt - a child world-space "E" label GameObject
 ///
 /// Dependency flow (per CLAUDE.md):
 ///   NPCTraveler -> TravelMenuUI -> TravelManager -> SceneManager
-///
-/// NOTE: _travelMenuUI is typed as MonoBehaviour temporarily until TravelMenuUI
-///       is created in Step 8. It will be replaced with the concrete type then.
 /// </summary>
 public class NPCTraveler : MonoBehaviour
 {
@@ -46,14 +43,14 @@ public class NPCTraveler : MonoBehaviour
     [SerializeField] private KeyCode _interactKey       = KeyCode.E;
 
     [Header("Interact Prompt")]
-    [Tooltip("Child world-space GameObject with an 'E' label — shown and blinks when player is in range.")]
+    [Tooltip("Child world-space GameObject with an E label - shown and blinks when player is in range.")]
     [SerializeField] private GameObject _interactPrompt;
 
     // ── Inspector — UI Reference ──────────────────────────────────────────────
 
     [Header("UI Reference")]
-    [Tooltip("Reference to the TravelMenuUI component in the scene Canvas. (Will be typed as TravelMenuUI in Step 8)")]
-    [SerializeField] private MonoBehaviour _travelMenuUI;
+    [Tooltip("Reference to the TravelMenuUI component in the scene Canvas.")]
+    [SerializeField] private TravelMenuUI _travelMenuUI;
 
     // ── Runtime ───────────────────────────────────────────────────────────────
 
@@ -61,9 +58,8 @@ public class NPCTraveler : MonoBehaviour
     private bool  _isMenuOpen;
     private float _blinkTimer;
 
-    // Blink timing constants — same pattern as NPCQuestDialog
-    private const float BlinkOnDuration  = 0.30f;
-    private const float BlinkCycleDuration = 0.45f;
+    private const float BlinkOnDuration      = 0.30f;
+    private const float BlinkCycleDuration   = 0.45f;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -71,7 +67,6 @@ public class NPCTraveler : MonoBehaviour
     {
         ValidateSetup();
 
-        // Hide prompt until player enters range
         if (_interactPrompt != null)
             _interactPrompt.SetActive(false);
     }
@@ -84,7 +79,6 @@ public class NPCTraveler : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Guard: close menu cleanly if NPC is destroyed mid-interaction
         if (_isMenuOpen)
             CloseTravelMenu();
     }
@@ -129,12 +123,7 @@ public class NPCTraveler : MonoBehaviour
         }
 
         _isMenuOpen = true;
-
-        // Cast to ITravelMenu interface and call Show
-        // Will be updated to TravelMenuUI concrete type in Step 8
-        var menu = GetTravelMenuUI();
-        if (menu != null)
-            menu.Show(_availableDestinations, OnDestinationSelected);
+        _travelMenuUI.Show(_availableDestinations, OnDestinationSelected);
     }
 
     /// <summary>
@@ -146,17 +135,13 @@ public class NPCTraveler : MonoBehaviour
         if (!_isMenuOpen) return;
 
         _isMenuOpen = false;
-
-        var menu = GetTravelMenuUI();
-        if (menu != null)
-            menu.Hide();
+        _travelMenuUI.Hide();
     }
 
     /// <summary>
-    /// Callback received from TravelMenuUI when player selects a destination.
+    /// Callback received from TravelMenuUI when the player selects a destination.
     /// Triggers the actual travel via TravelManager.
     /// </summary>
-    /// <param name="destination">The selected TravelDestinationData.</param>
     public void OnDestinationSelected(TravelDestinationData destination)
     {
         if (destination == null)
@@ -165,7 +150,7 @@ public class NPCTraveler : MonoBehaviour
             return;
         }
 
-        // Close menu before travel so it doesn't persist across scene load
+        // Close menu before travel so it does not persist across scene load
         CloseTravelMenu();
 
         if (TravelManager.Instance == null)
@@ -180,9 +165,6 @@ public class NPCTraveler : MonoBehaviour
 
     // ── Private Helpers ───────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Handles the E key press to open or close the travel menu.
-    /// </summary>
     private void HandleInteractInput()
     {
         if (!_isPlayerInRange) return;
@@ -194,10 +176,6 @@ public class NPCTraveler : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Blinks the interact prompt while player is in range and menu is closed.
-    /// Hides prompt when player is out of range or menu is open.
-    /// </summary>
     private void HandlePromptBlink()
     {
         if (_interactPrompt == null) return;
@@ -213,19 +191,6 @@ public class NPCTraveler : MonoBehaviour
             _interactPrompt.SetActive(false);
             _blinkTimer = 0f;
         }
-    }
-
-    /// <summary>
-    /// Retrieves the TravelMenuUI interface from the MonoBehaviour reference.
-    /// Will be replaced with a direct cast once TravelMenuUI is created in Step 8.
-    /// </summary>
-    private ITravelMenu GetTravelMenuUI()
-    {
-        if (_travelMenuUI is ITravelMenu menu)
-            return menu;
-
-        Debug.LogWarning($"[NPCTraveler] '{name}': Assigned _travelMenuUI does not implement ITravelMenu.");
-        return null;
     }
 
     // ── Validation ────────────────────────────────────────────────────────────

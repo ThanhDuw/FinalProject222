@@ -86,6 +86,9 @@ public class TravelManager : MonoBehaviour
         _isTraveling = true;
 
         // Notify other systems (e.g., Quest objectives) that player is traveling
+        // Save quest data before scene transition to preserve progress
+        SaveQuestDataBeforeTravel();
+
         GameEvents.RaisePlayerTraveled(destination.DestinationName);
 
         Debug.Log($"[TravelManager] Traveling to '{destination.DestinationName}' (Build Index: {destination.BuildIndex})");
@@ -150,6 +153,46 @@ public class TravelManager : MonoBehaviour
     /// <summary>
     /// Resets travel state after a scene load completes.
     /// </summary>
+    /// <summary>
+    /// Saves quest data to PlayerPrefs before scene transition.
+    /// Ensures active quest progress is not lost when the old scene is destroyed.
+    /// QuestManager and SaveSystem must be available via their Singletons.
+    /// </summary>
+    private void SaveQuestDataBeforeTravel()
+    {
+        if (QuestManager.Instance == null)
+        {
+            Debug.LogWarning("[TravelManager] QuestManager.Instance is null — quest data will not be saved before travel.");
+            return;
+        }
+
+        // Find SaveSystem in scene — it lives inside QuestSystem GameObject
+        SaveSystem saveSystem = FindFirstObjectByType<SaveSystem>();
+        if (saveSystem == null)
+        {
+            Debug.LogWarning("[TravelManager] SaveSystem not found — quest data will not be saved before travel.");
+            return;
+        }
+
+        // Find QuestTracker to get active objective progress
+        QuestTracker questTracker = FindFirstObjectByType<QuestTracker>();
+        var activeProgresses = questTracker != null
+            ? questTracker.GetAllActiveProgresses()
+            : null;
+
+        // Get all quest states from QuestManager
+        var allStates = new System.Collections.Generic.Dictionary<string, QuestState>();
+        foreach (QuestState state in System.Enum.GetValues(typeof(QuestState)))
+        {
+            var quests = QuestManager.Instance.GetQuestsByState(state);
+            foreach (var q in quests)
+                allStates[q.questID] = state;
+        }
+
+        saveSystem.SaveQuestData(allStates, activeProgresses);
+        Debug.Log("[TravelManager] Quest data saved before travel.");
+    }
+
     private void ResetTravelState()
     {
         _isTraveling = false;
