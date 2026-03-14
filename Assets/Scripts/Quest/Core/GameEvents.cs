@@ -13,6 +13,9 @@ public static class GameEvents
 
     // Notifies systems when a quest's progress changed (questID)
     public static event Action<string>      OnQuestProgressChanged;
+    // Notifies systems when the player travels to a new map (destinationName)
+    public static event Action<string>      OnPlayerTraveled;
+
 
     public static void RaiseEnemyKilled(string enemyID)           => OnEnemyKilled?.Invoke(enemyID);
     public static void RaiseItemCollected(string itemID, int amt)  => OnItemCollected?.Invoke(itemID, amt);
@@ -20,4 +23,6 @@ public static class GameEvents
     public static void RaiseLocationReached(string locationID)    => OnLocationReached?.Invoke(locationID);
 
     public static void RaiseQuestProgressChanged(string questID)  => OnQuestProgressChanged?.Invoke(questID);
+    public static void RaisePlayerTraveled(string destinationName) => OnPlayerTraveled?.Invoke(destinationName);
+
 }
