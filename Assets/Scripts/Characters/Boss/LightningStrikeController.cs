@@ -12,9 +12,12 @@ namespace CreatorKitCode
         [SerializeField] private GameObject m_ZapPrefab;
         [SerializeField] private GameObject m_WarningDecalPrefab;
 
+        [Header("SFX")]
+        [SerializeField] private AudioClip m_LightningSound;
+
         // ==================== CONFIGURATION ====================
         [Header("Ground Detection")]
-        [SerializeField] private LayerMask m_GroundLayer = ~0; // Mac dinh hit tat ca, chinh lai trong Inspector chi chon Terrain/Ground layer
+        [SerializeField] private LayerMask m_GroundLayer = ~0;
 
         [Header("Strike Settings")]
         [SerializeField] private int   m_StrikeCount     = 4;
@@ -65,12 +68,24 @@ namespace CreatorKitCode
                 if (warning != null)
                     Destroy(warning);
 
-                // 4. Spawn VFX set
+                // 4. Spawn VFX + Play SFX cung luc khi set danh xuong
                 if (m_ZapPrefab != null)
                 {
                     Vector3 zapPos = groundPos + Vector3.up * m_ZapGroundOffset;
                     GameObject zap = Instantiate(m_ZapPrefab, zapPos, Quaternion.identity);
                     Destroy(zap, m_ZapLifetime);
+                }
+
+                if (m_LightningSound != null)
+                {
+                    SFXManager.PlaySound(SFXManager.Use.Enemies, new SFXManager.PlayData
+                    {
+                        Clip     = m_LightningSound,
+                        Position = groundPos,
+                        Volume   = 1.0f,
+                        PitchMin = 0.9f,
+                        PitchMax = 1.1f
+                    });
                 }
 
                 // 5. Gay sat thuong
@@ -88,7 +103,7 @@ namespace CreatorKitCode
         private Vector3[] GenerateStrikePositions(Vector3 center, int count, float radius)
         {
             Vector3[] positions = new Vector3[count];
-            positions[0] = center; // Tia dau luon trung tam
+            positions[0] = center;
 
             for (int i = 1; i < count; i++)
             {
@@ -100,10 +115,6 @@ namespace CreatorKitCode
             return positions;
         }
 
-        /// <summary>
-        /// Raycast tu tren cao xuong, tranh hit collider cua boss/enemy.
-        /// m_GroundLayer nen duoc set chi chon Terrain hoac layer mat dat.
-        /// </summary>
         private Vector3 GetGroundPosition(Vector3 pos)
         {
             Vector3 rayOrigin = new Vector3(pos.x, pos.y + 30f, pos.z);
@@ -113,9 +124,6 @@ namespace CreatorKitCode
             return new Vector3(pos.x, 0f, pos.z);
         }
 
-        /// <summary>
-        /// Lam warning nhap nhay mau DO. Dung SetColor("_BaseColor") cho URP shader.
-        /// </summary>
         private IEnumerator PulseWarning(GameObject warning, float duration)
         {
             if (warning == null) yield break;
@@ -126,16 +134,13 @@ namespace CreatorKitCode
             float elapsed    = 0f;
             float pulseSpeed = 7f;
 
-            // Dat mau do ngay lap tuc truoc khi vao loop
             rend.material.SetColor("_BaseColor", new Color(1f, 0f, 0f, 0.85f));
 
             while (elapsed < duration && warning != null)
             {
                 elapsed += Time.deltaTime;
-
                 float alpha = Mathf.Lerp(0.4f, 1.0f, (Mathf.Sin(elapsed * pulseSpeed) + 1f) * 0.5f);
                 rend.material.SetColor("_BaseColor", new Color(1f, 0f, 0f, alpha));
-
                 yield return null;
             }
         }

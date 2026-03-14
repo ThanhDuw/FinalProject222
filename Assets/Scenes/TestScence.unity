@@ -119,34 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &755174966 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 164831327869296461, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-    type: 3}
-  m_PrefabInstance: {fileID: 7178531457488156698}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &755174968
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 755174966}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 0025a0ea3ab0b2e439a1844cf75d2162, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &791136764
 GameObject:
   m_ObjectHideFlags: 0
@@ -1703,11 +1675,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2256161245808553006, guid: fb1d46e832ad93f42a4f750ca7e290b4,
         type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2256161245808553006, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 202.51
       objectReference: {fileID: 0}
@@ -1745,21 +1712,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0.0000013910089
-      objectReference: {fileID: 0}
-    - target: {fileID: 2948894179872174606, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      propertyPath: m_LocalScale.x
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2948894179872174606, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      propertyPath: m_LocalScale.y
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2948894179872174606, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      propertyPath: m_LocalScale.z
-      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2948894179872174606, guid: fb1d46e832ad93f42a4f750ca7e290b4,
         type: 3}
@@ -1893,18 +1845,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4818358917459382957, guid: fb1d46e832ad93f42a4f750ca7e290b4,
         type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4818358917459382957, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 5.980604e-20
-      objectReference: {fileID: 0}
-    - target: {fileID: 4818358917459382957, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5616347764510357032, guid: fb1d46e832ad93f42a4f750ca7e290b4,
         type: 3}
@@ -1920,16 +1862,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: -2.7581687
-      objectReference: {fileID: 0}
-    - target: {fileID: 5653133815460978372, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      propertyPath: m_CharacterData
-      value: 
-      objectReference: {fileID: 7178531457488156708}
-    - target: {fileID: 5653133815460978372, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      propertyPath: m_PlayerLayer.m_Bits
-      value: 8192
       objectReference: {fileID: 0}
     - target: {fileID: 5674878067107392531, guid: fb1d46e832ad93f42a4f750ca7e290b4,
         type: 3}
@@ -2056,88 +1988,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 3.0551565
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 4732307025250763295, guid: fb1d46e832ad93f42a4f750ca7e290b4, type: 3}
-    - {fileID: 5653133815460978372, guid: fb1d46e832ad93f42a4f750ca7e290b4, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 7998458836720088071, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7178531457488156701}
-    - targetCorrespondingSourceObject: {fileID: 7998458836720088071, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7178531457488156708}
-    - targetCorrespondingSourceObject: {fileID: 164831327869296461, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 755174968}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fb1d46e832ad93f42a4f750ca7e290b4, type: 3}
---- !u!1 &7178531457488156699 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7998458836720088071, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-    type: 3}
-  m_PrefabInstance: {fileID: 7178531457488156698}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &7178531457488156700 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2187518839712461221, guid: fb1d46e832ad93f42a4f750ca7e290b4,
-    type: 3}
-  m_PrefabInstance: {fileID: 7178531457488156698}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &7178531457488156701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7178531457488156699}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d3b3c1d19fcc7f4e8e0e23071b63d59, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CreatorKitCode.SkeletonMageBoss
-  m_CastPoint: {fileID: 7178531457488156700}
-  m_DarkMagicPrefab: {fileID: 1105111623985532, guid: d03268a4406450646bbcdef70ee8ea3d,
-    type: 3}
-  m_CharacterData: {fileID: 7178531457488156708}
-  m_DetectionRadius: 15
-  m_PlayerLayer:
-    serializedVersion: 2
-    m_Bits: 8192
-  m_LightningRange: 12
-  m_LightningDamage: 35
-  m_LightningCastTime: 1.2
-  m_LightningCooldown: 6
-  m_DarkMagicRange: 10
-  m_DarkMagicDamage: 1
-  m_DarkMagicCastTime: 0.8
-  m_DarkMagicCooldown: 4
---- !u!114 &7178531457488156708
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7178531457488156699}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c45ba4cd943b6c745bb32ca76b631cff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CreatorKitCode.CharacterData
-  CharacterName: Skeleton Mage Boss
-  Stats:
-    baseStats:
-      health: 500
-      strength: 0
-      defense: 500
-      agility: 0
-      elementalProtection: 00000000000000000000000000000000
-      elementalBoosts: 00000000000000000000000000000000
-  StartingWeapon: {fileID: 0}
-  HitClip: []
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
