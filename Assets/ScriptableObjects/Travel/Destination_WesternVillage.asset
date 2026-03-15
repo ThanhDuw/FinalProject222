@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Destination_WesternVillage
   m_EditorClassIdentifier: Assembly-CSharp::TravelDestinationData
   _destinationName: Western Village
-  _buildIndex: 2
+  _buildIndex: 1
   _spawnPointID: SpawnPoint_WesternVillage
   _description: A quiet frontier town surrounded by dusty plains and wooden buildings.
   _icon: {fileID: 0}

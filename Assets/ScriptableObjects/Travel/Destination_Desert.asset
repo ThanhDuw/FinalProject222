@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Destination_Desert
   m_EditorClassIdentifier: Assembly-CSharp::TravelDestinationData
   _destinationName: Desert
-  _buildIndex: 3
+  _buildIndex: 2
   _spawnPointID: SpawnPoint_Desert
   _description: A vast scorching desert filled with ancient ruins and dangerous creatures.
   _icon: {fileID: 0}

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -126,6 +127,10 @@ public class TravelManager : MonoBehaviour
         }
 
         ResetTravelState();
+
+        // Notify UI systems (e.g. QuestTrackerManager) to refresh after scene load
+        // Wait one frame so all Start() methods in the new scene have run first
+        StartCoroutine(NotifySceneTransitionComplete());
     }
 
     /// <summary>
@@ -191,6 +196,18 @@ public class TravelManager : MonoBehaviour
 
         saveSystem.SaveQuestData(allStates, activeProgresses);
         Debug.Log("[TravelManager] Quest data saved before travel.");
+    }
+
+    /// <summary>
+    /// Waits one frame then raises OnSceneTransitionComplete so UI systems
+    /// (e.g. QuestTrackerManager) can refresh their display after the new
+    /// scene's Start() methods have all run.
+    /// </summary>
+    private IEnumerator NotifySceneTransitionComplete()
+    {
+        yield return null; // wait one frame
+        GameEvents.RaiseSceneTransitionComplete();
+        Debug.Log("[TravelManager] Scene transition complete — notified UI systems.");
     }
 
     private void ResetTravelState()

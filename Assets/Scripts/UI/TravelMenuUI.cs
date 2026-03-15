@@ -6,59 +6,45 @@ using UnityEngine.UI;
 /// <summary>
 /// TravelMenuUI — UI Controller (Travel System)
 ///
-/// Displays a panel listing available travel destinations.
-/// Player clicks a destination button to confirm travel.
+/// Uses pre-wired buttons defined directly in the scene hierarchy.
+/// No runtime Instantiate — buttons are always present, shown/hidden per availability.
 ///
-/// Implements ITravelMenu so NPCTraveler can call Show/Hide
-/// without a direct type dependency.
+/// Implements ITravelMenu so NPCTraveler can call Show/Hide.
 ///
-/// Setup requirements:
-///   1. Attach to a UI GameObject inside the scene Canvas
-///   2. Assign all Inspector references (menuPanel, titleText, etc.)
-///   3. Assign destinationButtonPrefab — a prefab with Button + Text components
-///   4. Drag this component reference into NPCTraveler._travelMenuUI
-///
-/// Hierarchy suggestion:
+/// Hierarchy:
 ///   Canvas
-///   └── TravelMenuPanel              (_menuPanel)
-///       ├── TitleText (Text)         (_titleText)
-///       ├── DestinationList          (_destinationListContainer)
-///       │   └── [buttons at runtime]
-///       └── CloseButton (Button)     (_closeButton)
+///   └── TravelMenuPanel                  (_menuPanel)
+///       ├── TitleText (Text)             (_titleText)
+///       ├── DestinationList
+///       │   ├── Button_WesternVillage    (_destinationButtons[0])
+///       │   ├── Button_Desert            (_destinationButtons[1])
+///       │   └── Button_Necrom            (_destinationButtons[2])
+///       └── CloseButton (Button)         (_closeButton)
 /// </summary>
 public class TravelMenuUI : MonoBehaviour, ITravelMenu
 {
-    // ── Inspector — UI References ─────────────────────────────────────────────
+    // ── Inspector — Panel ─────────────────────────────────────────────────────
 
     [Header("Panel")]
     [Tooltip("Root panel GameObject to show/hide.")]
     [SerializeField] private GameObject _menuPanel;
 
-    [Tooltip("Title text displayed at the top of the travel menu.")]
+    [Tooltip("Title text at the top of the menu.")]
     [SerializeField] private Text _titleText;
 
-    [Header("Destination List")]
-    [Tooltip("Parent Transform where destination buttons will be spawned at runtime.")]
-    [SerializeField] private Transform _destinationListContainer;
-
-    [Tooltip("Prefab for each destination entry. Must contain a Button and a Text component.")]
-    [SerializeField] private GameObject _destinationButtonPrefab;
+    [Header("Pre-wired Destination Buttons")]
+    [Tooltip("Drag Button_WesternVillage, Button_Desert, Button_Necrom here in order.")]
+    [SerializeField] private List<Button> _destinationButtons = new List<Button>();
 
     [Header("Close Button")]
-    [Tooltip("Button that closes the travel menu without traveling.")]
     [SerializeField] private Button _closeButton;
 
     [Header("Settings")]
-    [Tooltip("Title shown at the top of the menu panel.")]
     [SerializeField] private string _menuTitle = "Where would you like to go?";
 
     // ── Runtime ───────────────────────────────────────────────────────────────
 
-    /// <summary>Callback invoked when the player selects a destination.</summary>
     private Action<TravelDestinationData> _onDestinationSelected;
-
-    /// <summary>Tracks all instantiated destination buttons for cleanup.</summary>
-    private readonly List<GameObject> _spawnedButtons = new List<GameObject>();
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -69,7 +55,6 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
         if (_closeButton != null)
             _closeButton.onClick.AddListener(Hide);
 
-        // Always start hidden
         if (_menuPanel != null)
             _menuPanel.SetActive(false);
     }
@@ -79,17 +64,16 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
         if (_closeButton != null)
             _closeButton.onClick.RemoveListener(Hide);
 
-        ClearButtons();
+        // Remove all button listeners to avoid stale references
+        ClearButtonListeners();
     }
 
     // ── ITravelMenu Implementation ────────────────────────────────────────────
 
     /// <summary>
-    /// Shows the travel menu populated with the given destinations.
-    /// Called by NPCTraveler.OpenTravelMenu().
+    /// Shows the menu and wires each pre-wired button to its destination.
+    /// Buttons with no matching destination are hidden.
     /// </summary>
-    /// <param name="destinations">List of TravelDestinationData to display as buttons.</param>
-    /// <param name="onSelected">Callback invoked when the player picks a destination.</param>
     public void Show(List<TravelDestinationData> destinations, Action<TravelDestinationData> onSelected)
     {
         if (destinations == null || destinations.Count == 0)
@@ -98,106 +82,65 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
             return;
         }
 
-        // Store callback for use when a button is clicked
         _onDestinationSelected = onSelected;
 
-        // Clear stale buttons from any previous Show call
-        ClearButtons();
+        // Wire each button to its corresponding destination
+        for (int i = 0; i < _destinationButtons.Count; i++)
+        {
+            Button btn = _destinationButtons[i];
+            if (btn == null) continue;
 
-        // Populate fresh buttons
-        PopulateDestinations(destinations);
+            if (i < destinations.Count && destinations[i] != null)
+            {
+                TravelDestinationData dest = destinations[i];
 
-        // Set title
+                // Update button label text
+                Text label = btn.GetComponentInChildren<Text>();
+                if (label != null)
+                    label.text = dest.IsAvailable
+                        ? dest.DestinationName
+                        : $"{dest.DestinationName} (Unavailable)";
+
+                // Wire onClick — remove old listeners first to avoid duplicates
+                btn.onClick.RemoveAllListeners();
+                btn.interactable = dest.IsAvailable;
+
+                if (dest.IsAvailable)
+                {
+                    TravelDestinationData captured = dest;
+                    btn.onClick.AddListener(() => OnDestinationButtonClicked(captured));
+                }
+
+                btn.gameObject.SetActive(true);
+            }
+            else
+            {
+                // No destination for this slot — hide the button
+                btn.gameObject.SetActive(false);
+            }
+        }
+
         if (_titleText != null)
             _titleText.text = _menuTitle;
 
-        // Show the panel
         if (_menuPanel != null)
             _menuPanel.SetActive(true);
     }
 
     /// <summary>
-    /// Hides the travel menu and clears all spawned buttons.
-    /// Called by NPCTraveler.CloseTravelMenu() or the close button.
+    /// Hides the menu and clears all button listeners.
     /// </summary>
     public void Hide()
     {
         if (_menuPanel != null)
             _menuPanel.SetActive(false);
 
-        ClearButtons();
-
-        // Reset callback so no stale reference remains
+        ClearButtonListeners();
         _onDestinationSelected = null;
     }
 
-    // ── Private Methods ───────────────────────────────────────────────────────
+    // ── Private Helpers ───────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Instantiates one button per destination inside _destinationListContainer.
-    /// Unavailable destinations are shown grayed out and non-interactable.
-    /// </summary>
-    private void PopulateDestinations(List<TravelDestinationData> destinations)
-    {
-        if (_destinationButtonPrefab == null || _destinationListContainer == null)
-        {
-            Debug.LogWarning("[TravelMenuUI] Cannot populate destinations — prefab or container is missing.");
-            return;
-        }
-
-        foreach (var destination in destinations)
-        {
-            if (destination == null) continue;
-
-            // Instantiate button under the list container
-            GameObject buttonGO = Instantiate(_destinationButtonPrefab, _destinationListContainer);
-            _spawnedButtons.Add(buttonGO);
-
-            // Set the button label
-            Text label = buttonGO.GetComponentInChildren<Text>();
-            if (label != null)
-                label.text = destination.DestinationName;
-
-            Button button = buttonGO.GetComponent<Button>();
-            if (button != null)
-            {
-                if (destination.IsAvailable)
-                {
-                    // Capture destination in closure for onClick
-                    TravelDestinationData captured = destination;
-                    button.onClick.AddListener(() => OnDestinationButtonClicked(captured));
-                    button.interactable = true;
-                }
-                else
-                {
-                    // Show grayed out — destination not available
-                    button.interactable = false;
-
-                    if (label != null)
-                        label.text = $"{destination.DestinationName} (Unavailable)";
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Destroys all previously spawned destination buttons and clears the list.
-    /// </summary>
-    private void ClearButtons()
-    {
-        foreach (var btn in _spawnedButtons)
-        {
-            if (btn != null)
-                Destroy(btn);
-        }
-
-        _spawnedButtons.Clear();
-    }
-
-    /// <summary>
-    /// Called when the player clicks a destination button.
-    /// Invokes the callback registered by NPCTraveler.
-    /// </summary>
     private void OnDestinationButtonClicked(TravelDestinationData destination)
     {
         if (_onDestinationSelected == null)
@@ -209,20 +152,26 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
         _onDestinationSelected.Invoke(destination);
     }
 
+    private void ClearButtonListeners()
+    {
+        foreach (var btn in _destinationButtons)
+        {
+            if (btn != null)
+                btn.onClick.RemoveAllListeners();
+        }
+    }
+
     // ── Validation ────────────────────────────────────────────────────────────
 
     private void ValidateSetup()
     {
         if (_menuPanel == null)
-            Debug.LogWarning("[TravelMenuUI] _menuPanel is not assigned. Drag the root panel GameObject here.");
+            Debug.LogWarning("[TravelMenuUI] _menuPanel is not assigned.");
 
-        if (_destinationListContainer == null)
-            Debug.LogWarning("[TravelMenuUI] _destinationListContainer is not assigned. Drag the list container Transform here.");
-
-        if (_destinationButtonPrefab == null)
-            Debug.LogWarning("[TravelMenuUI] _destinationButtonPrefab is not assigned. Assign a prefab with Button + Text components.");
+        if (_destinationButtons == null || _destinationButtons.Count == 0)
+            Debug.LogWarning("[TravelMenuUI] No destination buttons assigned. Drag Button_WesternVillage, Button_Desert, Button_Necrom into _destinationButtons.");
 
         if (_closeButton == null)
-            Debug.LogWarning("[TravelMenuUI] _closeButton is not assigned. Drag the Close Button here.");
+            Debug.LogWarning("[TravelMenuUI] _closeButton is not assigned.");
     }
 }

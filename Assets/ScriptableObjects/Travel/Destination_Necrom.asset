@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Destination_Necrom
   m_EditorClassIdentifier: Assembly-CSharp::TravelDestinationData
   _destinationName: Necrom
-  _buildIndex: 4
+  _buildIndex: 3
   _spawnPointID: SpawnPoint_Necrom
   _description: A dark and cursed land ruled by the undead. Enter at your own risk.
   _icon: {fileID: 0}
