@@ -173,10 +173,10 @@ Assets/
   Prefabs/
     DestinationButtonPrefab.prefab  [ADDED]
   Scenes/
-    MainMenu.unity       (Build Index 1)
-    Western Village.unity (Build Index 2) [TravelManager lives here]
-    Desert.unity         (Build Index 3)
-    Necrom.unity         (Build Index 4)
+    MainMenu.unity        (Build Index 0)
+    Western Village.unity (Build Index 1) [TravelManager in all scenes via DontDestroyOnLoad]
+    Desert.unity          (Build Index 2)
+    Necrom.unity          (Build Index 3)x 4)
 
 Rules:
 - New scripts must be placed in the correct system folder

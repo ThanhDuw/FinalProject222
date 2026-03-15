@@ -5,54 +5,60 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Full quest log screen — displays all quests grouped by state.
+///
+/// Auto-select priority when quest state changes:
+///   1. First Active quest
+///   2. Last Completed quest (most recently finished)
+///   3. Nothing — Inactive quests are never auto-selected
 /// </summary>
 public class QuestLogUI : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private GameObject      questLogPanel;
-    [SerializeField] private Transform       questListContainer;
-    [SerializeField] private GameObject      questEntryPrefab;
-    [SerializeField] private Text             detailTitle;
-    [SerializeField] private Text             detailDescription;
-    
-    [SerializeField] private Text             rewardText;
-    [SerializeField] private Text             requestText;
+    [SerializeField] private GameObject questLogPanel;
+    [SerializeField] private Transform  questListContainer;
+    [SerializeField] private GameObject questEntryPrefab;
+    [SerializeField] private Text       detailTitle;
+    [SerializeField] private Text       detailDescription;
+    [SerializeField] private Text       rewardText;
+    [SerializeField] private Text       requestText;
 
-
-    private bool subscribed = false;
+    private bool      subscribed = false;
     private Coroutine waitForManagerCoroutine;
 
-private void Awake()
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    private void Awake()
     {
-        // Hide visual panel; script stays ACTIVE to receive events even when panel is hidden
         if (questLogPanel != null)
             questLogPanel.SetActive(false);
     }
 
     private void Start()
     {
-        // Subscribe in Start so QuestManager.Instance has already initialized in its own Awake
         TrySubscribe();
     }
 
+    private void OnDestroy()
+    {
+        Unsubscribe();
+    }
 
+    // ── Subscribe helpers ─────────────────────────────────────────────────────
 
     private void TrySubscribe()
     {
         if (subscribed) return;
+
         if (QuestManager.Instance != null)
         {
-            QuestManager.Instance.OnQuestStarted += OnQuestChanged;
+            QuestManager.Instance.OnQuestStarted   += OnQuestChanged;
             QuestManager.Instance.OnQuestCompleted += OnQuestChanged;
             QuestManager.Instance.OnQuestFailed    += OnQuestChanged;
             subscribed = true;
-
-            // Initially populate with all quests
             RefreshAll();
         }
         else
         {
-            // If QuestManager not yet initialized, wait a frame (or until available)
             if (waitForManagerCoroutine == null)
                 waitForManagerCoroutine = StartCoroutine(WaitForManagerThenSubscribe());
         }
@@ -60,14 +66,12 @@ private void Awake()
 
     private IEnumerator WaitForManagerThenSubscribe()
     {
-        // Wait until QuestManager.Instance is available or timeout after a few frames
         int tries = 0;
         while (QuestManager.Instance == null && tries < 60)
         {
             tries++;
             yield return null;
         }
-
         waitForManagerCoroutine = null;
         TrySubscribe();
     }
@@ -77,29 +81,26 @@ private void Awake()
         if (!subscribed) return;
         if (QuestManager.Instance != null)
         {
-            QuestManager.Instance.OnQuestStarted -= OnQuestChanged;
+            QuestManager.Instance.OnQuestStarted   -= OnQuestChanged;
             QuestManager.Instance.OnQuestCompleted -= OnQuestChanged;
             QuestManager.Instance.OnQuestFailed    -= OnQuestChanged;
         }
         subscribed = false;
     }
 
-    private void OnDestroy()
-    {
-        Unsubscribe();
-    }
+    // ── Event callback ────────────────────────────────────────────────────────
 
-private void OnQuestChanged(QuestData _)
+    private void OnQuestChanged(QuestData _)
     {
-        // Refresh even when panel is hidden — data stays current
         RefreshAll();
     }
+
+    // ── Public API ────────────────────────────────────────────────────────────
 
     public void Open()
     {
         if (questLogPanel != null)
             questLogPanel.SetActive(true);
-
         RefreshAll();
     }
 
@@ -116,7 +117,9 @@ private void OnQuestChanged(QuestData _)
         if (questLogPanel.activeSelf) RefreshAll();
     }
 
-private void RefreshAll()
+    // ── Core display ──────────────────────────────────────────────────────────
+
+    private void RefreshAll()
     {
         if (QuestManager.Instance == null) return;
 
@@ -128,21 +131,35 @@ private void RefreshAll()
 
         PopulateList(all);
 
-        // Auto-select: first Active quest, or first quest overall
+        // ── Auto-select priority ──────────────────────────────────────────────
+        // 1. First Active quest
+        // 2. Last Completed quest (keep overwriting to get the most recent one)
+        // 3. Nothing — never auto-select Inactive quests the player hasn't accepted
         QuestData autoSelect = null;
+
         foreach (var q in all)
         {
             if (QuestManager.Instance.GetQuestState(q.questID) == QuestState.Active)
-            { autoSelect = q; break; }
+            {
+                autoSelect = q;
+                break;
+            }
         }
-        if (autoSelect == null && all.Count > 0)
-            autoSelect = all[0];
+
+        if (autoSelect == null)
+        {
+            foreach (var q in all)
+            {
+                if (QuestManager.Instance.GetQuestState(q.questID) == QuestState.Completed)
+                    autoSelect = q;
+            }
+        }
 
         if (autoSelect != null)
             ShowQuestDetail(autoSelect);
     }
 
-private void PopulateList(List<QuestData> quests)
+    private void PopulateList(List<QuestData> quests)
     {
         if (questListContainer == null) return;
 
@@ -153,20 +170,20 @@ private void PopulateList(List<QuestData> quests)
 
         var fallbackFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-        // State colour map
-        var stateColors = new System.Collections.Generic.Dictionary<QuestState, Color>
+        var stateColors = new Dictionary<QuestState, Color>
         {
-            { QuestState.Active,    new Color(0.4f,  0.85f, 0.4f) },
-            { QuestState.Completed, new Color(0.55f, 0.55f, 0.9f) },
+            { QuestState.Active,    new Color(0.4f,  0.85f, 0.4f)  },
+            { QuestState.Completed, new Color(0.55f, 0.55f, 0.9f)  },
             { QuestState.Failed,    new Color(0.9f,  0.35f, 0.35f) },
-            { QuestState.Inactive,  new Color(0.6f,  0.6f,  0.6f) },
+            { QuestState.Inactive,  new Color(0.6f,  0.6f,  0.6f)  },
         };
-        var stateLabels = new System.Collections.Generic.Dictionary<QuestState, string>
+
+        var stateLabels = new Dictionary<QuestState, string>
         {
             { QuestState.Active,    "Active" },
-            { QuestState.Completed, "Done" },
+            { QuestState.Completed, "Done"   },
             { QuestState.Failed,    "Failed" },
-            { QuestState.Inactive,  "" },
+            { QuestState.Inactive,  ""       },
         };
 
         foreach (var q in quests)
@@ -183,7 +200,6 @@ private void PopulateList(List<QuestData> quests)
             {
                 entry = Instantiate(questEntryPrefab, questListContainer);
 
-                // ── StateIcon tint ────────────────────────────────────────────
                 var stateIcon = entry.transform.Find("StateIcon");
                 if (stateIcon != null)
                 {
@@ -192,7 +208,6 @@ private void PopulateList(List<QuestData> quests)
                         img.color = dot;
                 }
 
-                // ── QuestNameLabel ────────────────────────────────────────────
                 var nameLabel = entry.transform.Find("QuestNameLabel");
                 if (nameLabel != null)
                 {
@@ -200,52 +215,53 @@ private void PopulateList(List<QuestData> quests)
                     if (txt != null) txt.text = q.questName;
                 }
 
-                // ── StatusLabel ───────────────────────────────────────────────
                 var statusLabel = entry.transform.Find("StatusLabel");
                 if (statusLabel != null)
                 {
                     var txt = statusLabel.GetComponent<Text>();
                     if (txt != null)
                     {
-                        txt.text = stateLabels.TryGetValue(state, out var lbl) ? lbl : "";
+                        txt.text  = stateLabels.TryGetValue(state, out var lbl) ? lbl : "";
                         if (stateColors.TryGetValue(state, out var c)) txt.color = c;
                     }
                 }
             }
             else
             {
-                // ── Fallback (no prefab assigned) ─────────────────────────────
                 entry = new GameObject("QuestEntry");
                 entry.transform.SetParent(questListContainer, false);
 
-                var entryRect = entry.AddComponent<RectTransform>();
+                var entryRect      = entry.AddComponent<RectTransform>();
                 entryRect.sizeDelta = new Vector2(0f, 36f);
 
-                var le = entry.AddComponent<LayoutElement>();
+                var le             = entry.AddComponent<LayoutElement>();
                 le.preferredHeight = 36f;
                 le.flexibleWidth   = 1f;
 
-                var img = entry.AddComponent<Image>();
+                var img  = entry.AddComponent<Image>();
                 img.color = new Color(0.12f, 0.12f, 0.18f, 0.9f);
 
-                var btn = entry.AddComponent<Button>();
+                var btn  = entry.AddComponent<Button>();
                 btn.targetGraphic = img;
 
-                var labelGO = new GameObject("QuestNameLabel");
+                var labelGO  = new GameObject("QuestNameLabel");
                 labelGO.transform.SetParent(entry.transform, false);
-                var labelRect = labelGO.AddComponent<RectTransform>();
+
+                var labelRect       = labelGO.AddComponent<RectTransform>();
                 labelRect.anchorMin = Vector2.zero;
                 labelRect.anchorMax = Vector2.one;
                 labelRect.offsetMin = new Vector2(26f, 0f);
                 labelRect.offsetMax = Vector2.zero;
-                var txt = labelGO.AddComponent<Text>();
-                txt.font = fallbackFont; txt.fontSize = 14;
-                txt.color = Color.white; txt.alignment = TextAnchor.MiddleLeft;
-                txt.raycastTarget = false;
-                txt.text = q.questName;
+
+                var txt            = labelGO.AddComponent<Text>();
+                txt.font           = fallbackFont;
+                txt.fontSize       = 14;
+                txt.color          = Color.white;
+                txt.alignment      = TextAnchor.MiddleLeft;
+                txt.raycastTarget  = false;
+                txt.text           = q.questName;
             }
 
-            // Wire Button click -> ShowQuestDetail
             var button = entry.GetComponentInChildren<Button>();
             if (button != null)
             {
@@ -255,7 +271,7 @@ private void PopulateList(List<QuestData> quests)
         }
     }
 
-private void ShowQuestDetail(QuestData quest)
+    private void ShowQuestDetail(QuestData quest)
     {
         if (quest == null) return;
 
@@ -272,15 +288,18 @@ private void ShowQuestDetail(QuestData quest)
             rewardText.text = BuildRewardText(quest);
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
     private string BuildRequestText(QuestData quest)
     {
         if (quest.objectives == null || quest.objectives.Count == 0)
             return "No objectives.";
+
         var sb = new System.Text.StringBuilder();
         for (int i = 0; i < quest.objectives.Count; i++)
         {
-            var obj = quest.objectives[i];
             if (i > 0) sb.Append("\n");
+            var obj = quest.objectives[i];
             sb.AppendFormat("{0}. {1}  (x{2})", i + 1, obj.description, obj.requiredAmount);
         }
         return sb.ToString();
@@ -290,8 +309,9 @@ private void ShowQuestDetail(QuestData quest)
     {
         if (quest.goldReward == 0 && quest.experienceReward == 0)
             return "No rewards.";
-        var parts = new System.Collections.Generic.List<string>();
-        if (quest.goldReward > 0)       parts.Add(quest.goldReward + " Gold");
+
+        var parts = new List<string>();
+        if (quest.goldReward       > 0) parts.Add(quest.goldReward       + " Gold");
         if (quest.experienceReward > 0) parts.Add(quest.experienceReward + " XP");
         return string.Join("  |  ", parts);
     }

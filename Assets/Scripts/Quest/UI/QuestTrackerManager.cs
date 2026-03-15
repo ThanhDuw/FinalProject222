@@ -5,22 +5,16 @@ using UnityEngine.UI;
 /// <summary>
 /// HUD widget — hiển thị quest đang active và tiến độ objectives.
 ///
-/// Hierarchy mong đợi (tự tạo nếu thiếu):
-///   QuestTrackerManager
-///     └─ TrackerPanel          (Image background)
-///          ├─ Header           (Text: "✦ QUEST")
-///          ├─ QuestName        (Text: tên quest)
-///          ├─ Separator        (Image: đường kẻ ngang)
-///          └─ ObjectivesContainer (VerticalLayoutGroup)
-///               └─ (dynamic) ObjectiveRow_N
-///
-/// Setup:
-///   1. Kéo QuestTracker component (từ QuestSystem) vào questTracker
-///   2. Tất cả UI refs tự được tạo khi start nếu chưa assign
+/// Behaviour:
+///   - Hiển thị khi quest Active và cập nhật theo tiến độ.
+///   - Khi quest Complete: vẫn hiển thị trạng thái hoàn thành
+///     (tất cả objectives tick xanh) thay vì ẩn ngay.
+///   - Chỉ ẩn panel khi quest mới bắt đầu (OnQuestStarted)
+///     hoặc khi không có quest nào đang được theo dõi sau khi
+///     nhận quest mới từ NPC.
 ///
 /// Scene Transition:
-///   Listens to GameEvents.OnSceneTransitionComplete (raised by TravelManager
-///   one frame after a scene loads) to re-subscribe and refresh the tracker UI.
+///   Listens to GameEvents.OnSceneTransitionComplete (raised by TravelManager).
 /// </summary>
 public class QuestTrackerManager : MonoBehaviour
 {
@@ -39,6 +33,9 @@ public class QuestTrackerManager : MonoBehaviour
     private Font      _fallbackFont;
     private bool      _subscribed;
     private Coroutine _waitCoroutine;
+
+    // Last displayed progress — kept so we can re-show completed state
+    private QuestProgress _lastProgress;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -75,7 +72,6 @@ public class QuestTrackerManager : MonoBehaviour
     {
         if (_subscribed) return;
 
-        // Resolve QuestTracker from DDOL QuestSystem singleton if not assigned
         if (questTracker == null && QuestManager.Instance != null)
             questTracker = QuestManager.Instance.GetComponent<QuestTracker>();
 
@@ -90,7 +86,10 @@ public class QuestTrackerManager : MonoBehaviour
         questTracker.OnQuestTrackingStopped += OnQuestStopped;
         _subscribed = true;
 
-        // Refresh immediately in case a quest is already active (e.g. after scene reload)
+        // Subscribe to QuestManager events to know when a new quest starts
+        if (QuestManager.Instance != null)
+            QuestManager.Instance.OnQuestStarted += OnQuestStarted;
+
         RefreshFromAllActive();
     }
 
@@ -103,6 +102,9 @@ public class QuestTrackerManager : MonoBehaviour
             questTracker.OnProgressUpdated      -= OnProgressUpdated;
             questTracker.OnQuestTrackingStopped -= OnQuestStopped;
         }
+
+        if (QuestManager.Instance != null)
+            QuestManager.Instance.OnQuestStarted -= OnQuestStarted;
 
         _subscribed = false;
 
@@ -129,27 +131,15 @@ public class QuestTrackerManager : MonoBehaviour
 
     // ── Scene Transition Handler ──────────────────────────────────────────────
 
-    /// <summary>
-    /// Called by GameEvents.OnSceneTransitionComplete — raised by TravelManager
-    /// one frame after a new scene finishes loading.
-    ///
-    /// Re-resolves QuestTracker from the DDOL QuestSystem, re-subscribes if
-    /// needed, and refreshes the HUD so active quest progress is visible in
-    /// the new scene immediately.
-    /// </summary>
     private void OnSceneTransitionComplete()
     {
-        // Re-resolve QuestTracker from DDOL QuestSystem
         if (questTracker == null && QuestManager.Instance != null)
             questTracker = QuestManager.Instance.GetComponent<QuestTracker>();
 
-        // Re-subscribe if connection was lost
         if (!_subscribed)
             TrySubscribe();
 
-        // Force refresh HUD regardless of subscription state
         RefreshFromAllActive();
-
         Debug.Log("[QuestTrackerManager] Scene transition complete — quest tracker refreshed.");
     }
 
@@ -158,17 +148,48 @@ public class QuestTrackerManager : MonoBehaviour
     private void OnProgressUpdated(QuestProgress progress)
     {
         if (progress == null || progress.questData == null) return;
+        _lastProgress = progress;
         ShowProgress(progress);
     }
 
+    /// <summary>
+    /// Called when quest tracking stops (quest completed or failed).
+    /// Instead of hiding the panel immediately, keep showing the completed
+    /// state so the player can see they finished — panel hides when a new
+    /// quest starts (OnQuestStarted).
+    /// </summary>
     private void OnQuestStopped(string questID)
     {
+        // Show completed state if we have the last progress data
+        if (_lastProgress != null && _lastProgress.questData != null &&
+            _lastProgress.questData.questID == questID)
+        {
+            ShowCompletedState(_lastProgress);
+            return;
+        }
+
+        // No progress data — check if any other quest is still active
         bool anyActive = false;
         if (questTracker != null)
             foreach (var p in questTracker.GetAllActiveProgresses())
                 if (p != null) { anyActive = true; break; }
 
         if (!anyActive && trackerPanel != null)
+            trackerPanel.SetActive(false);
+    }
+
+    /// <summary>
+    /// Called when a new quest is started (player accepted quest from NPC).
+    /// Now it is safe to hide the completed-quest panel.
+    /// The new quest's progress will appear via OnProgressUpdated.
+    /// </summary>
+    private void OnQuestStarted(QuestData quest)
+    {
+        // Clear last progress so completed state doesn't linger for new quest
+        _lastProgress = null;
+
+        // Hide panel briefly — it will reappear when OnProgressUpdated fires
+        if (trackerPanel != null)
             trackerPanel.SetActive(false);
     }
 
@@ -183,9 +204,20 @@ public class QuestTrackerManager : MonoBehaviour
             latest = p;
 
         if (latest != null)
+        {
+            _lastProgress = latest;
             ShowProgress(latest);
+        }
+        else if (_lastProgress != null)
+        {
+            // Quest just completed — keep showing completed state
+            ShowCompletedState(_lastProgress);
+        }
     }
 
+    /// <summary>
+    /// Shows current quest progress with live objective counts.
+    /// </summary>
     private void ShowProgress(QuestProgress progress)
     {
         EnsurePanel();
@@ -193,41 +225,74 @@ public class QuestTrackerManager : MonoBehaviour
         if (questNameText != null)
             questNameText.text = progress.questData.questName;
 
-        if (objectivesContainer != null)
-        {
-            for (int i = objectivesContainer.childCount - 1; i >= 0; i--)
-                Destroy(objectivesContainer.GetChild(i).gameObject);
-
-            foreach (var obj in progress.questData.objectives)
-            {
-                progress.objectiveCounts.TryGetValue(obj.objectiveID, out int cur);
-                bool done = cur >= obj.requiredAmount;
-
-                var row      = new GameObject("ObjRow");
-                row.transform.SetParent(objectivesContainer, false);
-
-                var rowRect        = row.AddComponent<RectTransform>();
-                rowRect.sizeDelta  = new Vector2(220f, 22f);
-
-                var le             = row.AddComponent<LayoutElement>();
-                le.preferredHeight = 22f;
-                le.flexibleWidth   = 1f;
-
-                var txt            = row.AddComponent<Text>();
-                txt.font           = _fallbackFont;
-                txt.fontSize       = 13;
-                txt.color          = done
-                    ? new Color(0.45f, 0.95f, 0.45f)
-                    : new Color(0.92f, 0.92f, 0.92f);
-                txt.raycastTarget  = false;
-                txt.text           = done
-                    ? string.Format("✓ {0}", obj.description)
-                    : string.Format("• {0}  {1}/{2}", obj.description, cur, obj.requiredAmount);
-            }
-        }
+        BuildObjectiveRows(progress, isCompleted: false);
 
         if (trackerPanel != null)
             trackerPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// Shows quest as fully completed — all objectives ticked green,
+    /// header changes to "✦ QUEST COMPLETE". Panel stays visible until
+    /// the player accepts a new quest.
+    /// </summary>
+    private void ShowCompletedState(QuestProgress progress)
+    {
+        EnsurePanel();
+
+        if (questNameText != null)
+            questNameText.text = progress.questData.questName;
+
+        // Update header text to show completion
+        var header = trackerPanel.transform.Find("Header");
+        if (header != null)
+        {
+            var txt = header.GetComponent<Text>();
+            if (txt != null)
+                txt.text = "✦ QUEST COMPLETE";
+        }
+
+        BuildObjectiveRows(progress, isCompleted: true);
+
+        if (trackerPanel != null)
+            trackerPanel.SetActive(true);
+    }
+
+    private void BuildObjectiveRows(QuestProgress progress, bool isCompleted)
+    {
+        if (objectivesContainer == null) return;
+
+        for (int i = objectivesContainer.childCount - 1; i >= 0; i--)
+            Destroy(objectivesContainer.GetChild(i).gameObject);
+
+        foreach (var obj in progress.questData.objectives)
+        {
+            progress.objectiveCounts.TryGetValue(obj.objectiveID, out int cur);
+
+            // Force all ticked if showing completed state
+            bool done = isCompleted || cur >= obj.requiredAmount;
+
+            var row            = new GameObject("ObjRow");
+            row.transform.SetParent(objectivesContainer, false);
+
+            var rowRect        = row.AddComponent<RectTransform>();
+            rowRect.sizeDelta  = new Vector2(220f, 22f);
+
+            var le             = row.AddComponent<LayoutElement>();
+            le.preferredHeight = 22f;
+            le.flexibleWidth   = 1f;
+
+            var txt            = row.AddComponent<Text>();
+            txt.font           = _fallbackFont;
+            txt.fontSize       = 13;
+            txt.color          = done
+                ? new Color(0.45f, 0.95f, 0.45f)
+                : new Color(0.92f, 0.92f, 0.92f);
+            txt.raycastTarget  = false;
+            txt.text           = done
+                ? string.Format("✓ {0}", obj.description)
+                : string.Format("• {0}  {1}/{2}", obj.description, cur, obj.requiredAmount);
+        }
     }
 
     // ── Panel auto-builder ────────────────────────────────────────────────────
@@ -267,7 +332,7 @@ public class QuestTrackerManager : MonoBehaviour
         MakeText(panel.transform, "Header", "✦ QUEST ACTIVE",
             14, FontStyle.Bold, new Color(1f, 0.85f, 0.2f), 20f);
 
-        var nameGO   = MakeText(panel.transform, "QuestName", "—",
+        var nameGO    = MakeText(panel.transform, "QuestName", "—",
             15, FontStyle.Bold, Color.white, 22f);
         questNameText = nameGO.GetComponent<Text>();
 
