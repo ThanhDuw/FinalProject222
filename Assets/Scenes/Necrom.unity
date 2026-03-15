@@ -34475,6 +34475,18 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0e717fc3923b54b45afb7c0bb95171f6, type: 3}
+--- !u!114 &303581682 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 525542812262663951, guid: 0e717fc3923b54b45afb7c0bb95171f6,
+    type: 3}
+  m_PrefabInstance: {fileID: 303581681}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2af2a1c1b5eeacb4cbfd6aa689d2330a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TravelMenuUI
 --- !u!1001 &304058666
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -87014,6 +87026,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6028179874849212521, guid: edaf7899a232ae64693d20eaf0f2edea,
+        type: 3}
+      propertyPath: _travelMenuUI
+      value: 
+      objectReference: {fileID: 303581682}
     - target: {fileID: 7158456466064846417, guid: edaf7899a232ae64693d20eaf0f2edea,
         type: 3}
       propertyPath: m_Name
@@ -141805,6 +141822,50 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1405482858}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1406151803
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1406151805}
+  - component: {fileID: 1406151804}
+  m_Layer: 0
+  m_Name: TravelManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1406151804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1406151803}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1515059effc975b44b959137905d2f4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TravelManager
+--- !u!4 &1406151805
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1406151803}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1406174076
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -222699,3 +222760,4 @@ SceneRoots:
   - {fileID: 848458722}
   - {fileID: 612597788}
   - {fileID: 315525299}
+  - {fileID: 1406151805}
