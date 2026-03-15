@@ -1607,6 +1607,11 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 979988537}
+    - target: {fileID: 7942296280382097276, guid: ab63e45afe8336d4fb2bef31c35c8147,
+        type: 3}
+      propertyPath: CharacterName
+      value: Cactus Nails
+      objectReference: {fileID: 0}
     - target: {fileID: 8370330907190559678, guid: ab63e45afe8336d4fb2bef31c35c8147,
         type: 3}
       propertyPath: m_Mesh

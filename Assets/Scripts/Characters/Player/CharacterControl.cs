@@ -72,6 +72,10 @@ namespace CreatorKitCodeInternal {
 
         Vector3 m_LastRaycastResult;
 
+        // Gravity tracking
+        float m_VerticalVelocity = 0f;
+        const float Gravity = -20f;
+
         // Cache transform to reduce property access overhead
         Transform m_Transform;
 
@@ -199,6 +203,9 @@ namespace CreatorKitCodeInternal {
             if (m_CharacterController != null && m_CharacterController.enabled)
             {
                 Vector3 moveVelocity = moveDir * Speed * Time.deltaTime;
+                float grav = m_CharacterController.isGrounded ? -2f : m_VerticalVelocity + Gravity * Time.deltaTime;
+                m_VerticalVelocity = grav;
+                moveVelocity.y = m_VerticalVelocity * Time.deltaTime;
                 m_CharacterController.Move(moveVelocity);
             }
 

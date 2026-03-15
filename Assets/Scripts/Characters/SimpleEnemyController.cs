@@ -81,7 +81,10 @@ void Update()
                 m_Animator.SetTrigger(m_DeathAnimHash);
             
                 m_CharacterAudio.Death(transform.position);
-                m_CharacterData.Death();
+            // Notify Quest System that this enemy has been killed
+                GameEvents.RaiseEnemyKilled(m_CharacterData.CharacterName);
+
+                    m_CharacterData.Death();
             
                 if(m_LootSpawner != null)
                     m_LootSpawner.SpawnLoot();

@@ -1,9 +1,14 @@
-using UnityEngine;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 /// <summary>
-/// Listens to GameEvents (Enemy / Item System) and forwards
+/// Listens to GameEvents (Enemy / Item / NPC / Location) and forwards
 /// objective updates to QuestTracker.
+///
+/// IMPORTANT: All handlers snapshot GetAllActiveProgresses() with ToList()
+/// before iterating. This prevents InvalidOperationException when completing
+/// a quest causes QuestTracker to remove entries from the dictionary mid-loop.
 /// </summary>
 public class ObjectiveSystem : MonoBehaviour
 {
@@ -11,16 +16,16 @@ public class ObjectiveSystem : MonoBehaviour
 
     private void OnEnable()
     {
-        GameEvents.OnEnemyKilled    += HandleEnemyKilled;
-        GameEvents.OnItemCollected  += HandleItemCollected;
+        GameEvents.OnEnemyKilled      += HandleEnemyKilled;
+        GameEvents.OnItemCollected    += HandleItemCollected;
         GameEvents.OnNPCTalkCompleted += HandleNPCTalkCompleted;
         GameEvents.OnLocationReached  += HandleLocationReached;
     }
 
     private void OnDisable()
     {
-        GameEvents.OnEnemyKilled    -= HandleEnemyKilled;
-        GameEvents.OnItemCollected  -= HandleItemCollected;
+        GameEvents.OnEnemyKilled      -= HandleEnemyKilled;
+        GameEvents.OnItemCollected    -= HandleItemCollected;
         GameEvents.OnNPCTalkCompleted -= HandleNPCTalkCompleted;
         GameEvents.OnLocationReached  -= HandleLocationReached;
     }
@@ -29,13 +34,17 @@ public class ObjectiveSystem : MonoBehaviour
     {
         if (questTracker == null) return;
 
-        // For each active quest, check objectives of type KillEnemy that target this enemyID
-        foreach (var progress in questTracker.GetAllActiveProgresses())
+        // Snapshot to prevent InvalidOperationException if quest completes
+        // and UntrackQuest() modifies the dictionary during iteration
+        var snapshot = questTracker.GetAllActiveProgresses().ToList();
+
+        foreach (var progress in snapshot)
         {
             var quest = progress.questData;
             if (quest == null) continue;
 
-            foreach (var obj in quest.objectives.Where(o => o.type == ObjectiveType.KillEnemy && o.targetID == enemyID))
+            foreach (var obj in quest.objectives.Where(
+                o => o.type == ObjectiveType.KillEnemy && o.targetID == enemyID))
             {
                 questTracker.UpdateObjective(quest.questID, obj.objectiveID, 1);
             }
@@ -46,12 +55,15 @@ public class ObjectiveSystem : MonoBehaviour
     {
         if (questTracker == null) return;
 
-        foreach (var progress in questTracker.GetAllActiveProgresses())
+        var snapshot = questTracker.GetAllActiveProgresses().ToList();
+
+        foreach (var progress in snapshot)
         {
             var quest = progress.questData;
             if (quest == null) continue;
 
-            foreach (var obj in quest.objectives.Where(o => o.type == ObjectiveType.CollectItem && o.targetID == itemID))
+            foreach (var obj in quest.objectives.Where(
+                o => o.type == ObjectiveType.CollectItem && o.targetID == itemID))
             {
                 questTracker.UpdateObjective(quest.questID, obj.objectiveID, amount);
             }
@@ -62,12 +74,15 @@ public class ObjectiveSystem : MonoBehaviour
     {
         if (questTracker == null) return;
 
-        foreach (var progress in questTracker.GetAllActiveProgresses())
+        var snapshot = questTracker.GetAllActiveProgresses().ToList();
+
+        foreach (var progress in snapshot)
         {
             var quest = progress.questData;
             if (quest == null) continue;
 
-            foreach (var obj in quest.objectives.Where(o => o.type == ObjectiveType.TalkToNPC && o.targetID == npcID))
+            foreach (var obj in quest.objectives.Where(
+                o => o.type == ObjectiveType.TalkToNPC && o.targetID == npcID))
             {
                 questTracker.UpdateObjective(quest.questID, obj.objectiveID, 1);
             }
@@ -78,12 +93,15 @@ public class ObjectiveSystem : MonoBehaviour
     {
         if (questTracker == null) return;
 
-        foreach (var progress in questTracker.GetAllActiveProgresses())
+        var snapshot = questTracker.GetAllActiveProgresses().ToList();
+
+        foreach (var progress in snapshot)
         {
             var quest = progress.questData;
             if (quest == null) continue;
 
-            foreach (var obj in quest.objectives.Where(o => o.type == ObjectiveType.ReachLocation && o.targetID == locationID))
+            foreach (var obj in quest.objectives.Where(
+                o => o.type == ObjectiveType.ReachLocation && o.targetID == locationID))
             {
                 questTracker.UpdateObjective(quest.questID, obj.objectiveID, 1);
             }

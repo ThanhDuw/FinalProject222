@@ -19,14 +19,14 @@ MonoBehaviour:
     in the wasteland."
   objectives:
   - objectiveID: obj_01_kill_cactus
-    description: Eliminate Cactus enemies (0/5)
+    description: 'Eliminate Cactus enemies '
     type: 0
-    targetID: CactusEnemy
+    targetID: Cactus Nails
     requiredAmount: 5
   - objectiveID: obj_01_kill_elite_cactus
-    description: Defeat the Elite Cactus (0/1)
+    description: 'Defeat the Elite Cactus '
     type: 0
-    targetID: EliteCactus
+    targetID: Cactus Bossy
     requiredAmount: 1
   experienceReward: 50
   goldReward: 100

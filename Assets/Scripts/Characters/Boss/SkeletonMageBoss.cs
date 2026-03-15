@@ -312,6 +312,9 @@ namespace CreatorKitCode
 
             m_Agent.enabled = false;
             m_Animator.speed = 1f;
+            // Notify Quest System that this boss has been killed
+            GameEvents.RaiseEnemyKilled(m_CharacterData.CharacterName);
+
             m_Animator.SetTrigger(ANIM_DEATH);
             GetComponent<Collider>().enabled = false;
             Destroy(gameObject, 5f);
