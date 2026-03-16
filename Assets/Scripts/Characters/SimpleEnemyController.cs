@@ -58,6 +58,7 @@ void Start()
             m_CharacterData.OnDamage += () =>
             {
                 if (m_IsDead) return;
+                if (m_CharacterAudio == null) return;
                 m_Animator.SetTrigger(m_HitAnimHash);
                 m_CharacterAudio.Hit(transform.position);
             };
@@ -80,7 +81,8 @@ void Update()
 
                 m_Animator.SetTrigger(m_DeathAnimHash);
             
-                m_CharacterAudio.Death(transform.position);
+                if (m_CharacterAudio != null)
+                    m_CharacterAudio.Death(transform.position);
             // Notify Quest System that this enemy has been killed
                 GameEvents.RaiseEnemyKilled(m_CharacterData.CharacterName);
 
@@ -197,6 +199,7 @@ void Update()
 public void FootstepFrame()
         {
             if (m_IsDead) return;
+            if (m_CharacterAudio == null) return;
 
             Vector3 pos = transform.position;
         

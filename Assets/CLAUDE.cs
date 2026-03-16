@@ -6,10 +6,10 @@
 # Project Overview
 
 * Genre: Top-down Action RPG
-* Engine: Unity
+* Engine: Unity (URP)
 * Language: C#
 * Architecture Goal: Modular gameplay systems with scalable architecture
-* Current Development Phase: Core gameplay systems development
+* Current Development Phase: Core gameplay systems -- functional and stable
 
 Claude must prioritize:
 
@@ -23,7 +23,7 @@ Claude must prioritize:
 
 These rules define the architecture of the project. Claude must never violate them.
 
-System-Based Architecture
+## System-Based Architecture
 
 The game is divided into gameplay systems:
 
@@ -34,7 +34,7 @@ The game is divided into gameplay systems:
 * Inventory System
 * UI System
 * Save System
-* Travel System  [ADDED]
+* Travel System
 
 Each system must have:
 
@@ -48,25 +48,27 @@ Each system must have:
 
 Claude must maintain a mental map of the project architecture.
 
-Gameplay Layer
+## Gameplay Layer
 
-  Player
-  Enemy
-  NPC (NPCQuestDialog, NPCTraveler)
+  Player (CharacterControl, CombatController)
+  Enemy  (SimpleEnemyController, SkeletonMageBoss)
+  NPC    (NPCQuestDialog, NPCTraveler)
 
-System Layer
+## System Layer
 
-  CombatSystem
-  QuestSystem
-  InventorySystem
-  SaveSystem
-  TravelManager  [ADDED - Infrastructure Layer, DontDestroyOnLoad]
+  CombatSystem    (CombatController -- attached on Player)
+  QuestSystem     (QuestManager, QuestTracker, ObjectiveSystem, SaveSystem)
+  InventorySystem (InventorySystem, EquipmentSystem)
+  TravelSystem    (TravelManager, NPCTraveler, TravelMenuUI)
 
-Infrastructure Layer
+## Infrastructure Layer
 
-  UIManager
-  AudioManager
+  UIManager / UISystem
+  AudioManager (SFXManager, AmbiencePlayer, RandomBGMPlayer)
+  VFXManager
   GameManager
+  TravelManager   [DontDestroyOnLoad -- Singleton]
+  QuestManager    [DontDestroyOnLoad -- Singleton]
 
 Claude must respect this layered structure.
 
@@ -82,23 +84,50 @@ Rules:
 
 Claude must follow this dependency direction.
 
-Allowed dependency flow:
+## Allowed dependency flow:
 
-  Player        -> CombatSystem
-  Enemy         -> CombatSystem
-  QuestSystem   -> UI
-  InventorySystem -> UI
-  SaveSystem    -> GameManager
-  NPCTraveler   -> TravelMenuUI -> TravelManager -> SceneManager  [ADDED]
-  TravelManager -> SaveSystem (saves quest data before scene load)  [ADDED]
+  Player          -> CombatController -> CharacterData
+  Enemy           -> CharacterData (attack via CharacterData.Attack())
+  NPCQuestDialog  -> QuestManager
+  NPCTraveler     -> TravelMenuUI -> TravelManager -> SceneManager
+  TravelManager   -> SaveSystem (saves quest data before scene load)
+  TravelManager   -> QuestManager (reads quest states)
+  QuestManager    -> QuestTracker -> ObjectiveSystem
+  SaveSystem      -> PlayerPrefs (persistence)
+  GameEvents      -> (all systems listen, no direct dependency)
 
-Avoid:
+## Avoid:
 
-  UI -> CombatSystem
-  Enemy -> QuestSystem
+  UI -> CombatSystem directly
+  Enemy -> QuestSystem directly
   Player -> SaveSystem directly
 
 If a dependency violates architecture, Claude must propose a better design.
+
+---
+
+# Namespace Convention
+
+IMPORTANT: Core player and enemy scripts use the namespace CreatorKitCodeInternal.
+Data classes use the namespace CreatorKitCode.
+
+Scripts in CreatorKitCodeInternal namespace:
+  - CharacterControl
+  - CombatController
+  - SimpleEnemyController
+
+Scripts in CreatorKitCode namespace:
+  - SkeletonMageBoss
+  - FireballProjectile
+  - CharacterData
+
+Scripts WITHOUT namespace (global):
+  - QuestManager, QuestTracker, ObjectiveSystem, SaveSystem
+  - TravelManager, NPCTraveler, TravelMenuUI, TravelDestinationData
+  - NPCQuestDialog, GameEvents
+  - UISystem, VFXManager, SFXManager, DamageUI
+
+Claude must add correct using and namespace declarations when creating scripts.
 
 ---
 
@@ -110,36 +139,91 @@ Claude must check this before creating scripts.
   -------------|------------------------------
   Controller   | Handles gameplay logic
   Manager      | Handles global system state
-  Data         | Stores configuration data
+  Data         | Stores configuration data (ScriptableObject)
   Utility      | Reusable helper functions
   AI           | Enemy decision logic
+  UI           | Handles display and user interaction
 
-Travel System Scripts [ADDED]:
+## Player Scripts
 
-  Script                   | Type         | Responsibility
-  -------------------------|--------------|------------------------------------------
-  TravelManager            | Manager      | Singleton. Handles scene loading, persists
-                           |              | SpawnPointID via DontDestroyOnLoad,
-                           |              | saves quest data before scene transition,
-                           |              | teleports player to SpawnPoint after load.
-  NPCTraveler              | Controller   | Attached to Peasant NPC. Handles trigger
-                           |              | detection, prompt blink, key E input,
-                           |              | opens/closes TravelMenuUI.
-  TravelMenuUI             | UI           | Displays destination list as buttons.
-                           |              | Implements ITravelMenu. Spawns buttons
-                           |              | dynamically, handles close button.
-  TravelDestinationData    | Data (SO)    | ScriptableObject. Stores destination name,
-                           |              | build index, SpawnPoint ID, description,
-                           |              | icon, availability flag.
-  ITravelMenu              | Interface    | Contract between NPCTraveler and
-                           |              | TravelMenuUI. Methods: Show(), Hide().
+  Script                  | Type       | Responsibility
+  ------------------------|------------|-------------------------------------------
+  CharacterControl        | Controller | WASD movement, camera, click-to-attack input,
+                          |            | delegates combat to CombatController
+  CombatController        | Controller | Attack state machine (WindUp/Active/Recovery),
+                          |            | cone-sweep hit detection, input buffering,
+                          |            | knockback. Implements IAttackFrameReceiver.
+  CharacterData           | Data/Logic | Health, stats, equipment, attack resolution
+  PlayerInteract          | Controller | Interaction with world objects
 
-Rules:
-- Controller -> gameplay entity behavior
-- Manager -> global system control
-- Data -> ScriptableObject or config classes
+## Enemy Scripts
 
-Claude must not mix responsibilities in one script.
+  Script                    | Type | Responsibility
+  --------------------------|------|-------------------------------------------
+  SimpleEnemyController     | AI   | NavMeshAgent-based: IDLE/PURSUING/ATTACKING
+                            |      | state machine. Raises GameEvents.RaiseEnemyKilled
+                            |      | on death. Implements IAttackFrameReceiver.
+  SkeletonMageBoss          | AI   | Boss with 2 skills: Lightning Strike
+                            |      | (LightningStrikeController) and Dark Magic
+                            |      | AoE (warning disk + VFX + damage delay).
+                            |      | States: IDLE/CHASING/CASTING/DEAD.
+  LightningStrikeController | AI   | Executes lightning skill sequence for Boss
+  FireballProjectile        | AI   | Projectile logic
+
+## Quest System Scripts
+
+  Script          | Type       | Responsibility
+  ----------------|------------|-------------------------------------------
+  QuestManager    | Manager    | Singleton + DontDestroyOnLoad. Central
+                  |            | coordinator. Start/Complete/Fail quests.
+                  |            | Reads QuestDatabase (ScriptableObject).
+  QuestTracker    | System     | Tracks active quest progress (objectiveCounts).
+                  |            | Raises OnProgressUpdated, OnQuestTrackingStopped.
+  ObjectiveSystem | System     | Processes GameEvents -> updates QuestTracker
+  SaveSystem      | System     | Saves/loads quest states via PlayerPrefs
+  QuestData       | Data (SO)  | Quest definition: id, name, desc, objectives[]
+  QuestDatabase   | Data (SO)  | Collection of all QuestData in project
+
+## Travel System Scripts
+
+  Script                 | Type      | Responsibility
+  -----------------------|-----------|------------------------------------------
+  TravelManager          | Manager   | Singleton + DontDestroyOnLoad. Handles
+                         |           | scene loading, persists SpawnPointID,
+                         |           | saves quest data before scene transition,
+                         |           | teleports player to SpawnPoint after load.
+                         |           | Raises GameEvents.RaiseSceneTransitionComplete
+                         |           | one frame after scene loads.
+  NPCTraveler            | Controller| Attached to Peasant NPC. Trigger detection,
+                         |           | prompt blink (E key), opens/closes TravelMenuUI.
+  TravelMenuUI           | UI        | Pre-wired buttons (no Instantiate at runtime).
+                         |           | Implements ITravelMenu. Show()/Hide() called
+                         |           | by NPCTraveler. Buttons assigned in Inspector.
+  TravelDestinationData  | Data (SO) | Destination name, build index, SpawnPoint ID,
+                         |           | description, availability flag.
+  ITravelMenu            | Interface | Contract: Show(destinations, callback), Hide()
+
+## NPC Scripts
+
+  Script             | Type       | Responsibility
+  -------------------|------------|-------------------------------------------
+  NPCQuestDialog     | Controller | Quest offer/progress dialog. Trigger-based.
+                     |            | Supports prerequisiteQuestIDs gating.
+                     |            | Blink prompt (E key). Shared dialoguePanel.
+  NpcPromptBillboard | Utility    | Keeps world-space E prompt facing camera
+
+## Quest UI Scripts
+
+  Script              | Type | Responsibility
+  --------------------|------|-------------------------------------------
+  QuestTrackerManager | UI   | HUD widget -- shows active quest + objectives.
+                      |      | Listens to QuestTracker events and
+                      |      | GameEvents.OnSceneTransitionComplete.
+                      |      | Auto-builds panel if not assigned in Inspector.
+  QuestLogUI          | UI   | Full quest log panel
+  QuestTrackerUI      | UI   | Single quest tracker row display
+  TrackQuestButton    | UI   | Button to toggle QuestTrackerManager panel
+  MenuController      | UI   | Controls main menu panels
 
 ---
 
@@ -149,34 +233,89 @@ Assets/
   Scripts/
     Characters/
       Player/
-      Enemy/
-    Systems/
-      Combat/
-      Quest/
-      Inventory/
-    Managers/
-    UI/
-    Travel/              [ADDED]
-      Data/
-        TravelDestinationData.cs
-      TravelManager.cs
-      ITravelMenu.cs
+        CharacterControl.cs      [namespace CreatorKitCodeInternal]
+        CombatController.cs      [namespace CreatorKitCodeInternal]
+        CombatState.cs
+        AttackState.cs
+        PlayerInteract.cs
+      Boss/
+        SkeletonMageBoss.cs      [namespace CreatorKitCode]
+        LightningStrikeController.cs
+        FireballProjectile.cs
+      SimpleEnemyController.cs   [namespace CreatorKitCodeInternal]
+      TrainingDummy.cs
+    CharacterSystem/
+      CharacterData.cs
+      StatSystem.cs
+      EquipmentSystem.cs
+      InventorySystem.cs
+      BaseElementalEffect.cs
     Quest/
+      Core/
+        QuestManager.cs          [Singleton, DontDestroyOnLoad]
+        QuestTracker.cs
+        ObjectiveSystem.cs
+        SaveSystem.cs
+        GameEvents.cs            [Static event bus -- no MonoBehaviour]
+      Data/
+        QuestData.cs
+        QuestDatabase.cs
       NPC/
         NPCQuestDialog.cs
-        NPCTraveler.cs   [ADDED]
+        NPCTraveler.cs
+        NpcPromptBillboard.cs
+      UI/
+        QuestTrackerManager.cs
+        QuestTrackerUI.cs
+        QuestLogUI.cs
+        TrackQuestButton.cs
+        MenuController.cs
+    Travel/
+      Data/
+        TravelDestinationData.cs
+      TravelManager.cs           [Singleton, DontDestroyOnLoad]
+      ITravelMenu.cs
+    UI/
+      TravelMenuUI.cs
+      UISystem.cs
+      DamageUI.cs
+      InventoryUI.cs
+      EquipmentUI.cs
+      ItemTooltip.cs
+      LootUI.cs
+      MainMenuController.cs
+    Audio/
+      SFXManager.cs
+      AmbiencePlayer.cs
+      RandomBGMPlayer.cs
+      CharacterAudio.cs
+    Items/
+      Item.cs, Weapon.cs, UsableItem.cs, EquipmentItem.cs
+      Effects/ (ApplyBurnWeaponEffect, VampiricWeaponEffect, etc.)
+      ItemEffect/ (AddHealthEffect, etc.)
+    GameplayObject/
+      BreakableObject.cs, Container.cs, Loot.cs, LootSpawner.cs, SpawnPoint.cs
+    Utility/
+      Helpers.cs, RandomLoopOffset.cs, SceneLinkSMB.cs, UIAlphaRaycast.cs
+    Managers/ (global managers)
+    Editor/ (editor-only tools)
+    AnimationControllerDispatcher.cs
+    VFXManager.cs, VFXDatabase.cs, VFXTypes.cs
+    CameraController.cs
+    ResourceManager.cs
+    HighlightableObject.cs, InteractableObject.cs
   ScriptableObjects/
-    Travel/              [ADDED]
+    Travel/
       Destination_WesternVillage.asset
       Destination_Desert.asset
       Destination_Necrom.asset
   Prefabs/
-    DestinationButtonPrefab.prefab  [ADDED]
+    (DestinationButtonPrefab obsolete -- TravelMenuUI now uses pre-wired buttons)
   Scenes/
     MainMenu.unity        (Build Index 0)
-    Western Village.unity (Build Index 1) [TravelManager in all scenes via DontDestroyOnLoad]
+    Western Village.unity (Build Index 1)  [primary dev scene]
     Desert.unity          (Build Index 2)
-    Necrom.unity          (Build Index 3)x 4)
+    Necrom.unity          (Build Index 3)
 
 Rules:
 - New scripts must be placed in the correct system folder
@@ -185,27 +324,115 @@ Rules:
 
 ---
 
-# Travel System — Key Design Decisions [ADDED]
+# Scene Hierarchy -- Western Village (Reference)
 
-SpawnPoint Convention:
+Root GameObjects in Western Village scene:
+  Directional Light
+  Global Volume
+  PlayerCore              [CharacterControl, CombatController, CharacterData...]
+  Ground                  [Tilemap / terrain children]
+  Peasant                 [NPCTraveler -- Travel NPC]
+  Cowboy                  [NPCQuestDialog -- Quest NPC]
+  Nolant                  [NPCQuestDialog -- Quest NPC]
+  QuestSystem             [QuestManager + QuestTracker + ObjectiveSystem]
+  TravelManager           [TravelManager Singleton]
+  SpawnPoint_WesternVillage
+
+---
+
+# Travel System -- Key Design Decisions
+
+## SpawnPoint Convention:
+
 - SpawnPointID in TravelDestinationData must match the GameObject NAME in the target scene.
-- TravelManager uses GameObject.Find(spawnPointID) to locate the spawn position.
-- Each scene must have a correctly named SpawnPoint GameObject:
+- TravelManager uses GameObject.Find(spawnPointID) to locate spawn position.
+- Each scene has a correctly named SpawnPoint GameObject:
     Western Village -> SpawnPoint_WesternVillage
     Desert          -> SpawnPoint_Desert
     Necrom          -> SpawnPoint_Necrom
 
-Quest Data Preservation:
-- TravelManager.TravelTo() calls SaveQuestDataBeforeTravel() BEFORE LoadScene().
-- This saves all quest states and objective progress to PlayerPrefs via SaveSystem.
-- The new scene's QuestSystem.Start() restores data from PlayerPrefs on load.
-- Without this step, quest progress would be lost on scene transition.
+## Quest Data Preservation:
 
-DontDestroyOnLoad:
-- Only TravelManager uses DontDestroyOnLoad (Singleton).
-- QuestManager also uses DontDestroyOnLoad.
-- PlayerCore (Character, Camera, Managers) is duplicated in each scene — NOT shared.
-- When LoadScene(Single) runs, the old scene is fully destroyed except DDOL objects.
+- TravelManager.TravelTo() calls SaveQuestDataBeforeTravel() BEFORE LoadScene().
+- Saves all quest states and objective progress to PlayerPrefs via SaveSystem.
+- New scene QuestSystem.Start() restores data from PlayerPrefs on load.
+
+## TravelMenuUI -- Pre-wired Buttons (NOT runtime Instantiate):
+
+- Buttons assigned in Inspector: Button_WesternVillage, Button_Desert, Button_Necrom.
+- Hierarchy: Canvas > TravelMenuPanel > DestinationList > [buttons]
+- Buttons with no matching destination are hidden via SetActive(false) at runtime.
+
+## DontDestroyOnLoad Objects:
+
+- TravelManager (Singleton)
+- QuestManager  (Singleton)
+- PlayerCore is DUPLICATED per scene -- NOT shared across scenes.
+- When LoadScene(Single) runs, the old scene is destroyed except DDOL objects.
+
+---
+
+# Combat System -- Key Design Decisions
+
+## Architecture:
+
+- CharacterControl handles INPUT and MOVEMENT only.
+- CombatController handles all ATTACK LOGIC (separate component, same GameObject).
+- CharacterControl calls m_CombatController.TryAttackAt(target) on left mouse click.
+- CombatController implements IAttackFrameReceiver -- AttackFrame() fired by animation event.
+
+## Attack Flow:
+
+  Left Click -> CharacterControl.GetClickedCharacterData()
+             -> CombatController.TryAttackAt(target)
+             -> CombatState: Idle -> WindUp -> Active -> Recovery -> Idle
+             -> AttackFrame() [animation event] -> cone sweep hit detection
+             -> CharacterData.Attack(target)
+
+## CombatState enum: Idle | WindUp | Active | Recovery
+
+## Performance:
+
+- Pre-allocated RaycastHit[8] and Collider[8] -- no per-frame GC allocation.
+- SphereCastNonAlloc + OverlapSphereNonAlloc for hit detection.
+
+---
+
+# Enemy AI -- Key Design Decisions
+
+## SimpleEnemyController:
+
+- NavMeshAgent pathfinding. States: IDLE -> PURSUING -> ATTACKING.
+- Raises GameEvents.RaiseEnemyKilled(characterName) on death.
+- Implements IAttackFrameReceiver (animation-event-driven damage).
+
+## SkeletonMageBoss:
+
+- States: IDLE -> CHASING -> CASTING -> DEAD.
+- Skill 1: Lightning Strike (via LightningStrikeController, range-based).
+- Skill 2: Dark Magic AoE (warning disk VFX -> delay -> AoE damage).
+- Both skills have independent cooldown timers.
+- Raises GameEvents.RaiseEnemyKilled on death.
+
+---
+
+# Event Bus -- GameEvents (Static)
+
+GameEvents is a STATIC class (not MonoBehaviour). No instance needed.
+
+Events:
+  OnEnemyKilled            (string enemyID)
+  OnItemCollected          (string itemID, int amount)
+  OnNPCTalkCompleted       (string npcID)
+  OnLocationReached        (string locationID)
+  OnQuestProgressChanged   (string questID)
+  OnPlayerTraveled         (string destinationName)
+  OnSceneTransitionComplete ()
+
+Usage pattern:
+  Raise  -> GameEvents.RaiseEnemyKilled("GoblinA");
+  Listen -> GameEvents.OnEnemyKilled += MyHandler;
+  Unsub  -> GameEvents.OnEnemyKilled -= MyHandler;  // in OnDisable/OnDestroy
 
 ---
 
@@ -217,7 +444,7 @@ Before performing major tasks Claude must:
 2. Identify major systems
 3. Understand script responsibilities
 4. Detect system dependencies
-5. Map prefab structure
+5. Map prefab / scene structure
 
 Claude must build a project architecture understanding before proposing solutions.
 
@@ -251,11 +478,7 @@ Claude should only implement full logic when explicitly requested.
 # Unity Editor Management
 
 Claude may recommend modifications to:
-  GameObjects
-  Prefabs
-  Scenes
-  Hierarchy
-  Inspector configuration
+  GameObjects, Prefabs, Scenes, Hierarchy, Inspector configuration
 
 Claude must explain:
 - where the change should be applied
@@ -273,6 +496,114 @@ Step 4 - Provide step-by-step fix instructions
 Claude must NOT automatically rewrite code unless the user asks.
 
 ---
+
+# Anti-Spaghetti-Code Rules
+
+Claude must actively prevent:
+- Creating duplicate systems
+- Creating unnecessary scripts
+- Circular dependencies
+- Large god classes
+- Systems controlling unrelated systems
+
+If a request would cause these issues, Claude must warn the user and propose a safer architecture.
+
+---
+
+# AI Development Workflow
+
+1. Feature / Problem Analysis
+2. Identify Affected Systems
+3. Architecture Decision -- Extend existing system or create new one
+4. Implementation Plan
+5. Script Framework (if needed)
+6. Unity Editor Setup
+7. Potential Risks
+
+Claude must behave like a technical lead supervising development.
+
+---
+
+# Coding Standards
+
+Naming:
+  PascalCase    -> Classes, Methods, Properties
+  camelCase     -> local variables
+  _camelCase    -> serialized private fields  (e.g. _interactionRadius)
+  m_PascalCase  -> private runtime fields in CreatorKitCode/CreatorKitCodeInternal scripts
+                   (legacy convention from original codebase -- keep consistent)
+
+Use:
+  [SerializeField] instead of public fields when possible.
+  [Header("...")] to organize Inspector fields.
+  XML summary comments on public methods.
+
+Avoid:
+  overly complex logic in Update()
+  tight coupling between systems
+  Instantiate/Destroy for frequently spawned objects (use pooling)
+
+---
+
+# Current Development Focus
+
+Systems COMPLETE and stable:
+  Travel System      [fully implemented, UI bugs resolved, pre-wired buttons]
+  Quest System       [fully implemented]
+  Combat System      [fully implemented -- CombatController refactor complete]
+  Enemy AI           [SimpleEnemyController + SkeletonMageBoss implemented]
+  NPC Dialog System  [NPCQuestDialog with prerequisite gating]
+
+Systems that may need expansion:
+  Save System        [currently PlayerPrefs-based -- may need file-based save later]
+  Inventory / Equipment UI
+  Audio wiring per scene (BGM / SFX)
+
+---
+
+# Known Issues & Technical Debt
+
+No critical issues as of 2026-03-16.
+
+Minor notes:
+  - SimpleEnemyController is Update()-heavy -- acceptable for current enemy count.
+    If enemy count scales, consider coroutine-based patrol or event-driven triggers.
+  - SkeletonMageBoss uses Instantiate for VFX -- acceptable for boss frequency.
+    If adding more projectile-heavy enemies, consider object pooling.
+  - QuestManager and TravelManager both use DontDestroyOnLoad.
+    Ensure they are NOT duplicated in Desert / Necrom scenes.
+    Singleton guards handle duplicates, but correct scene setup avoids log spam.
+
+---
+
+# Changelog
+
+  Date         | Change                                            | Author
+  -------------|---------------------------------------------------|--------
+  2026-03-15   | Added Travel System (NPCTraveler, TravelManager,  | Moon
+               | TravelMenuUI, TravelDestinationData, ITravelMenu) |
+  2026-03-15   | Extended GameEvents with OnPlayerTraveled          | Moon
+  2026-03-15   | TravelManager saves quest data before scene load   | Moon
+  2026-03-15   | Created SpawnPoints in all 3 game scenes           | Moon
+  2026-03-15   | Wired all Inspector references via MCP             | Moon
+  2026-03-15   | TravelMenuUI refactored to pre-wired buttons        | Moon
+               | (removed runtime Instantiate, fixed layout bugs)   |
+  2026-03-16   | CLAUDE.md full rewrite -- reflects actual codebase  | Moon
+               | Added: namespace map, combat system design,        |
+               | enemy AI details, scene hierarchy, complete        |
+               | script responsibility table, known issues updated  |
+
+---
+
+# Final Instruction
+
+Claude must always read this file before proposing architectural changes.
+
+This file defines the technical rules and architecture of the project.
+
+Claude must act as a Senior Unity Technical Lead, ensuring the project remains
+clean, scalable, and maintainable.
+-
 
 # Anti-Spaghetti-Code Rules
 

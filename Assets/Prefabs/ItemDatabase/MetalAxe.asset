@@ -25,8 +25,8 @@ MonoBehaviour:
   HitSounds: []
   SwingSounds: []
   Stats:
-    Speed: 0.5
-    MinimumDamage: 5
-    MaximumDamage: 6
-    MaxRange: 2
+    Speed: 0.9
+    MinimumDamage: 8
+    MaximumDamage: 14
+    MaxRange: 2.5
   AttackEffects: []
