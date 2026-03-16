@@ -9,9 +9,9 @@ using UnityEngine.UI;
 ///   - Hiển thị khi quest Active và cập nhật theo tiến độ.
 ///   - Khi quest Complete: vẫn hiển thị trạng thái hoàn thành
 ///     (tất cả objectives tick xanh) thay vì ẩn ngay.
-///   - Chỉ ẩn panel khi quest mới bắt đầu (OnQuestStarted)
-///     hoặc khi không có quest nào đang được theo dõi sau khi
-///     nhận quest mới từ NPC.
+///   - Chỉ ẩn panel khi quest mới bắt đầu (OnQuestStarted).
+///   - TogglePanel() — gọi bởi Track_Quest button trong Quest Log
+///     để bật/tắt panel thủ công.
 ///
 /// Scene Transition:
 ///   Listens to GameEvents.OnSceneTransitionComplete (raised by TravelManager).
@@ -86,7 +86,6 @@ public class QuestTrackerManager : MonoBehaviour
         questTracker.OnQuestTrackingStopped += OnQuestStopped;
         _subscribed = true;
 
-        // Subscribe to QuestManager events to know when a new quest starts
         if (QuestManager.Instance != null)
             QuestManager.Instance.OnQuestStarted += OnQuestStarted;
 
@@ -154,13 +153,11 @@ public class QuestTrackerManager : MonoBehaviour
 
     /// <summary>
     /// Called when quest tracking stops (quest completed or failed).
-    /// Instead of hiding the panel immediately, keep showing the completed
-    /// state so the player can see they finished — panel hides when a new
+    /// Keeps showing the completed state — panel hides only when a new
     /// quest starts (OnQuestStarted).
     /// </summary>
     private void OnQuestStopped(string questID)
     {
-        // Show completed state if we have the last progress data
         if (_lastProgress != null && _lastProgress.questData != null &&
             _lastProgress.questData.questID == questID)
         {
@@ -168,7 +165,6 @@ public class QuestTrackerManager : MonoBehaviour
             return;
         }
 
-        // No progress data — check if any other quest is still active
         bool anyActive = false;
         if (questTracker != null)
             foreach (var p in questTracker.GetAllActiveProgresses())
@@ -179,18 +175,47 @@ public class QuestTrackerManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Called when a new quest is started (player accepted quest from NPC).
-    /// Now it is safe to hide the completed-quest panel.
-    /// The new quest's progress will appear via OnProgressUpdated.
+    /// Called when a new quest starts. Clears completed state and hides panel
+    /// until the new quest's OnProgressUpdated fires.
     /// </summary>
     private void OnQuestStarted(QuestData quest)
     {
-        // Clear last progress so completed state doesn't linger for new quest
         _lastProgress = null;
 
-        // Hide panel briefly — it will reappear when OnProgressUpdated fires
         if (trackerPanel != null)
             trackerPanel.SetActive(false);
+    }
+
+    // ── Public API ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Toggles the QuestTracker panel on/off.
+    /// Called by the Track_Quest button inside the Quest Log.
+    /// When turning back on: shows live quest if active, or last completed
+    /// state if available.
+    /// </summary>
+    public void TogglePanel()
+    {
+        EnsurePanel();
+
+        if (trackerPanel.activeSelf)
+        {
+            trackerPanel.SetActive(false);
+            return;
+        }
+
+        // Turn on — prefer live active quest, fall back to last known progress
+        bool hasActive = false;
+        if (questTracker != null)
+            foreach (var p in questTracker.GetAllActiveProgresses())
+                if (p != null) { hasActive = true; break; }
+
+        if (hasActive)
+            RefreshFromAllActive();
+        else if (_lastProgress != null)
+            ShowCompletedState(_lastProgress);
+        else
+            trackerPanel.SetActive(true);
     }
 
     // ── Display ───────────────────────────────────────────────────────────────
@@ -210,14 +235,10 @@ public class QuestTrackerManager : MonoBehaviour
         }
         else if (_lastProgress != null)
         {
-            // Quest just completed — keep showing completed state
             ShowCompletedState(_lastProgress);
         }
     }
 
-    /// <summary>
-    /// Shows current quest progress with live objective counts.
-    /// </summary>
     private void ShowProgress(QuestProgress progress)
     {
         EnsurePanel();
@@ -225,17 +246,20 @@ public class QuestTrackerManager : MonoBehaviour
         if (questNameText != null)
             questNameText.text = progress.questData.questName;
 
+        // Reset header to active state
+        var header = trackerPanel.transform.Find("Header");
+        if (header != null)
+        {
+            var txt = header.GetComponent<Text>();
+            if (txt != null) txt.text = "✦ QUEST ACTIVE";
+        }
+
         BuildObjectiveRows(progress, isCompleted: false);
 
         if (trackerPanel != null)
             trackerPanel.SetActive(true);
     }
 
-    /// <summary>
-    /// Shows quest as fully completed — all objectives ticked green,
-    /// header changes to "✦ QUEST COMPLETE". Panel stays visible until
-    /// the player accepts a new quest.
-    /// </summary>
     private void ShowCompletedState(QuestProgress progress)
     {
         EnsurePanel();
@@ -243,13 +267,11 @@ public class QuestTrackerManager : MonoBehaviour
         if (questNameText != null)
             questNameText.text = progress.questData.questName;
 
-        // Update header text to show completion
         var header = trackerPanel.transform.Find("Header");
         if (header != null)
         {
             var txt = header.GetComponent<Text>();
-            if (txt != null)
-                txt.text = "✦ QUEST COMPLETE";
+            if (txt != null) txt.text = "✦ QUEST COMPLETE";
         }
 
         BuildObjectiveRows(progress, isCompleted: true);
@@ -268,8 +290,6 @@ public class QuestTrackerManager : MonoBehaviour
         foreach (var obj in progress.questData.objectives)
         {
             progress.objectiveCounts.TryGetValue(obj.objectiveID, out int cur);
-
-            // Force all ticked if showing completed state
             bool done = isCompleted || cur >= obj.requiredAmount;
 
             var row            = new GameObject("ObjRow");
@@ -324,7 +344,7 @@ public class QuestTrackerManager : MonoBehaviour
         vlg.childControlWidth      = true;
         vlg.childControlHeight     = false;
 
-        var csf        = panel.AddComponent<ContentSizeFitter>();
+        var csf         = panel.AddComponent<ContentSizeFitter>();
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         trackerPanel = panel;
@@ -336,14 +356,14 @@ public class QuestTrackerManager : MonoBehaviour
             15, FontStyle.Bold, Color.white, 22f);
         questNameText = nameGO.GetComponent<Text>();
 
-        var sep      = new GameObject("Separator");
+        var sep       = new GameObject("Separator");
         sep.transform.SetParent(panel.transform, false);
-        sep.layer    = gameObject.layer;
-        var sepRect  = sep.AddComponent<RectTransform>();
+        sep.layer     = gameObject.layer;
+        var sepRect   = sep.AddComponent<RectTransform>();
         sepRect.sizeDelta  = new Vector2(0f, 2f);
-        var sepImg   = sep.AddComponent<Image>();
-        sepImg.color = new Color(1f, 0.85f, 0.2f, 0.45f);
-        var sepLE    = sep.AddComponent<LayoutElement>();
+        var sepImg    = sep.AddComponent<Image>();
+        sepImg.color  = new Color(1f, 0.85f, 0.2f, 0.45f);
+        var sepLE     = sep.AddComponent<LayoutElement>();
         sepLE.preferredHeight = 2f;
         sepLE.flexibleWidth   = 1f;
 
@@ -360,10 +380,10 @@ public class QuestTrackerManager : MonoBehaviour
         objVLG.childControlWidth      = true;
         objVLG.childControlHeight     = false;
 
-        var objCSF       = objContainer.AddComponent<ContentSizeFitter>();
+        var objCSF        = objContainer.AddComponent<ContentSizeFitter>();
         objCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        var objLE        = objContainer.AddComponent<LayoutElement>();
+        var objLE         = objContainer.AddComponent<LayoutElement>();
         objLE.flexibleWidth = 1f;
 
         objectivesContainer = objContainer.transform;

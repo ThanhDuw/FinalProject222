@@ -1085,12 +1085,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 562294157}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &672916482 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4314947897533098780, guid: 0e717fc3923b54b45afb7c0bb95171f6,
-    type: 3}
-  m_PrefabInstance: {fileID: 1600658913}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &693693636
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2653,11 +2647,6 @@ PrefabInstance:
       propertyPath: questTracker
       value: 
       objectReference: {fileID: 1262466642}
-    - target: {fileID: 8510531967820640859, guid: 0e717fc3923b54b45afb7c0bb95171f6,
-        type: 3}
-      propertyPath: trackerPanel
-      value: 
-      objectReference: {fileID: 672916482}
     - target: {fileID: 9019588675975445768, guid: 0e717fc3923b54b45afb7c0bb95171f6,
         type: 3}
       propertyPath: m_SizeDelta.y
