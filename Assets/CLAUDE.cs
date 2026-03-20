@@ -90,7 +90,7 @@ Claude must follow this dependency direction.
   Enemy           -> CharacterData (attack via CharacterData.Attack())
   NPCQuestDialog  -> QuestManager
   NPCTraveler     -> TravelMenuUI -> TravelManager -> SceneManager
-  TravelManager   -> SaveSystem (saves quest + inventory + equipment before scene load)))
+  TravelManager   -> SaveSystem (saves quest + inventory + equipment + health before scene load)
   TravelManager   -> QuestManager (reads quest states)
   QuestManager    -> QuestTracker -> ObjectiveSystem
   SaveSystem      -> PlayerPrefs (persistence)
@@ -180,7 +180,7 @@ Claude must check this before creating scripts.
   QuestTracker    | System     | Tracks active quest progress (objectiveCounts).
                   |            | Raises OnProgressUpdated, OnQuestTrackingStopped.
   ObjectiveSystem | System     | Processes GameEvents -> updates QuestTracker
-  SaveSystem      | System     | Saves/loads quest + inventory + equipment via PlayerPrefsia PlayerPrefs
+  SaveSystem      | System     | Saves/loads quest + inventory + equipment + health via PlayerPrefsfs
   QuestData       | Data (SO)  | Quest definition: id, name, desc, objectives[]
   QuestDatabase   | Data (SO)  | Collection of all QuestData in project
 
@@ -604,7 +604,24 @@ Minor notes:
 2026-03-20   | Extended SaveSystem: added Inventory + Equipment    | Moon
                | persistence via PlayerPrefs (3 separate keys).     |
 2026-03-20   | Extended TravelManager: saves inventory + equipment | Moon
-               | before LoadScene(), restores after OnSceneLoaded(). |es updated  |
+               | before LoadScene(), restores after OnSc
+2026-03-20   | Fixed bug: QuestTracker not restored after scene    | Moon
+               | transition -- QuestManager.RestoreQuestStateAfter  |
+               | SceneLoad() now re-tracks Active quests + restores |
+               | objective counts via OnSceneTransitionComplete.    |
+2026-03-20   | Fixed bug: Weapon (Basic Rake) duplicated in        | Moon
+               | inventory on every scene change -- moved Restore   |
+               | logic into RestoreAndNotify coroutine (yield null)  |
+               | so CharacterData.Init() runs first, m_DefaultWeapon |
+               | is set before RestoreEquipment() executes.         |
+2026-03-20   | Fixed bug: Player health resets to full on scene    | Moon
+               | transition -- SaveSystem now saves/loads health as  |
+               | a percentage (PlayerHealthData key in PlayerPrefs). |
+               | TravelManager saves before travel, restores after  |
+               | equipment is applied in RestoreAndNotify().        |
+2026-03-20   | Fixed bug: Desert/Necrom had no QuestSystem/Save    | Moon
+               | System -- added QuestSystem to both scenes.        |
+               | Removed duplicate TravelManager from Necrom.       |eneLoaded(). |es updated  |
 
 ---
 

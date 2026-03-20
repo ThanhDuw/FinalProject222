@@ -8,6 +8,7 @@ public class SaveSystem : MonoBehaviour
     private const string QuestSaveKey     = "QuestSaveData";
     private const string InventorySaveKey = "InventorySaveData";
     private const string EquipmentSaveKey = "EquipmentSaveData";
+    private const string HealthSaveKey    = "PlayerHealthData";
 
     // -- Quest ----------------------------------------------------------------
 
@@ -60,7 +61,7 @@ public class SaveSystem : MonoBehaviour
         var json = JsonUtility.ToJson(new InventoryWrapper { items = list });
         PlayerPrefs.SetString(InventorySaveKey, json);
         PlayerPrefs.Save();
-        Debug.Log($"[SaveSystem] Inventory saved: {list.Count} slot(s).");
+        Debug.Log("[SaveSystem] Inventory saved: " + list.Count + " slot(s).");
     }
 
     public InventoryWrapper LoadInventoryData()
@@ -105,7 +106,49 @@ public class SaveSystem : MonoBehaviour
 
     public void ClearEquipmentData() { PlayerPrefs.DeleteKey(EquipmentSaveKey); PlayerPrefs.Save(); }
 
-    public void ClearAllSaveData() { ClearQuestData(); ClearInventoryData(); ClearEquipmentData(); }
+    // -- Health ---------------------------------------------------------------
+
+    /// <summary>
+    /// Saves the player's current health as a percentage of max health.
+    /// Stored as percentage so it stays valid if max health changes
+    /// after equipment is reapplied in the new scene.
+    /// </summary>
+    public void SaveHealthData(CharacterData characterData)
+    {
+        if (characterData == null)
+        {
+            Debug.LogWarning("[SaveSystem] SaveHealthData: null.");
+            return;
+        }
+        int maxHp  = Mathf.Max(1, characterData.Stats.stats.health);
+        float pct  = (float)characterData.Stats.CurrentHealth / maxHp;
+        PlayerPrefs.SetFloat(HealthSaveKey, pct);
+        PlayerPrefs.Save();
+        Debug.Log("[SaveSystem] Health saved: " + characterData.Stats.CurrentHealth + "/" + maxHp);
+    }
+
+    /// <summary>Returns saved health as a percentage (0..1). Returns -1 if no data exists.</summary>
+    public float LoadHealthData()
+    {
+        if (!PlayerPrefs.HasKey(HealthSaveKey)) return -1f;
+        return PlayerPrefs.GetFloat(HealthSaveKey, 1f);
+    }
+
+    public void ClearHealthData()
+    {
+        PlayerPrefs.DeleteKey(HealthSaveKey);
+        PlayerPrefs.Save();
+    }
+
+    // -- Clear All ------------------------------------------------------------
+
+    public void ClearAllSaveData()
+    {
+        ClearQuestData();
+        ClearInventoryData();
+        ClearEquipmentData();
+        ClearHealthData();
+    }
 
     // -- Models ---------------------------------------------------------------
 

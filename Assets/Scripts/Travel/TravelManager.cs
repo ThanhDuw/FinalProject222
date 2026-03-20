@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using CreatorKitCode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,11 +8,14 @@ public class TravelManager : MonoBehaviour
 {
     public static TravelManager Instance { get; private set; }
 
-    [SerializeField] private ItemRegistry _itemRegistry;
+    [SerializeField] private ItemRegistry        _itemRegistry;
+    [SerializeField] private SceneTransitionUI   _transitionUI;
 
     private string _pendingSpawnPointID;
-    private bool _isTraveling;
+    private bool   _isTraveling;
     private const string PlayerTag = "Player";
+
+    // -- Lifecycle ------------------------------------------------------------
 
     private void Awake()
     {
@@ -23,24 +27,51 @@ public class TravelManager : MonoBehaviour
     private void OnEnable()  { SceneManager.sceneLoaded += OnSceneLoaded; }
     private void OnDisable() { SceneManager.sceneLoaded -= OnSceneLoaded; }
 
+    // -- Public API -----------------------------------------------------------
+
+    /// <summary>
+    /// Initiates travel to the destination.
+    /// Caches SaveSystem, QuestTracker, and Player ONCE then passes them
+    /// to all Save helpers -- avoids repeated FindFirstObjectByType calls.
+    /// </summary>
     public void TravelTo(TravelDestinationData destination)
     {
-        if (destination == null) { Debug.LogWarning("[TravelManager] Null destination."); return; }
+        if (destination == null)      { Debug.LogWarning("[TravelManager] Null destination."); return; }
         if (!destination.IsAvailable) { Debug.LogWarning($"[TravelManager] '{destination.DestinationName}' not available."); return; }
-        if (_isTraveling) { Debug.LogWarning("[TravelManager] Already traveling."); return; }
+        if (_isTraveling)             { Debug.LogWarning("[TravelManager] Already traveling."); return; }
 
         _pendingSpawnPointID = destination.SpawnPointID;
         _isTraveling = true;
 
-        RunSaveQuestData();
-        RunSaveInventory();
-        RunSaveEquipment();
+        // FindFirstObjectByType called ONCE each -- shared across all Save helpers
+        GameObject   player       = GameObject.FindWithTag(PlayerTag);
+        SaveSystem   saveSystem   = FindFirstObjectByType<SaveSystem>();
+        QuestTracker questTracker = FindFirstObjectByType<QuestTracker>();
+
+        SaveQuestData(saveSystem, questTracker);
+        SaveInventory(player, saveSystem);
+        SaveEquipment(player, saveSystem);
+        SaveHealth(player, saveSystem);
 
         GameEvents.RaisePlayerTraveled(destination.DestinationName);
         Debug.Log($"[TravelManager] Traveling to '{destination.DestinationName}' (Build Index: {destination.BuildIndex})");
-        SceneManager.LoadScene(destination.BuildIndex);
+        if (_transitionUI != null)
+        {
+            int buildIndex = destination.BuildIndex;
+            _transitionUI.FadeOut(() => SceneManager.LoadScene(buildIndex));
+        }
+        else
+        {
+            SceneManager.LoadScene(destination.BuildIndex);
+        }
     }
 
+    // -- Scene Loaded ---------------------------------------------------------
+
+    /// <summary>
+    /// Called when new scene finishes loading.
+    /// Caches SaveSystem ONCE then passes it to all Restore helpers.
+    /// </summary>
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (!_isTraveling) return;
@@ -49,64 +80,75 @@ public class TravelManager : MonoBehaviour
         if (player == null) { ResetTravelState(); return; }
 
         Transform sp = FindSpawnPoint(_pendingSpawnPointID);
-        if (sp != null) { player.transform.position = sp.position; player.transform.rotation = sp.rotation; }
+        if (sp != null)
+        {
+            player.transform.position = sp.position;
+            player.transform.rotation = sp.rotation;
+            Debug.Log($"[TravelManager] Player placed at '{_pendingSpawnPointID}' in '{scene.name}'.");
+        }
+        else
+        {
+            Debug.LogWarning($"[TravelManager] SpawnPoint '{_pendingSpawnPointID}' not found in '{scene.name}'.");
+        }
 
         ResetTravelState();
-        RunRestoreInventory(player);
-        RunRestoreEquipment(player);
-        StartCoroutine(NotifyComplete());
+
+        // FindFirstObjectByType called ONCE -- passed to RestoreAndNotify coroutine
+        SaveSystem saveSystem = FindFirstObjectByType<SaveSystem>();
+
+        // Wait one frame so CharacterData.Init() (called in CharacterControl.Start())
+        // runs BEFORE we restore inventory and equipment.
+        // Without this wait, m_DefaultWeapon is null during RestoreEquipment,
+        // causing Init() to later add the starting weapon to inventory as a duplicate.
+        StartCoroutine(RestoreAndNotify(player, saveSystem));
     }
 
     private Transform FindSpawnPoint(string id)
     {
         if (string.IsNullOrEmpty(id)) return null;
         GameObject go = GameObject.Find(id);
-        return go != null ? go.transform : null;
+        if (go != null) return go.transform;
+        Debug.LogWarning($"[TravelManager] SpawnPoint '{id}' not found in current scene.");
+        return null;
     }
 
-    private void RunSaveQuestData()
+    // -- Save Helpers ---------------------------------------------------------
+
+    private void SaveQuestData(SaveSystem saveSystem, QuestTracker questTracker)
     {
-        if (QuestManager.Instance == null) return;
-        SaveSystem ss = FindFirstObjectByType<SaveSystem>();
-        if (ss == null) return;
-        QuestTracker qt = FindFirstObjectByType<QuestTracker>();
-        var prog = qt != null ? qt.GetAllActiveProgresses() : null;
-        var states = new System.Collections.Generic.Dictionary<string, QuestState>();
+        if (QuestManager.Instance == null || saveSystem == null) return;
+        var prog   = questTracker != null ? questTracker.GetAllActiveProgresses() : null;
+        var states = new Dictionary<string, QuestState>();
         foreach (QuestState s in System.Enum.GetValues(typeof(QuestState)))
             foreach (var q in QuestManager.Instance.GetQuestsByState(s))
                 states[q.questID] = s;
-        ss.SaveQuestData(states, prog);
+        saveSystem.SaveQuestData(states, prog);
         Debug.Log("[TravelManager] Quest data saved.");
     }
 
-    private void RunSaveInventory()
+    private void SaveInventory(GameObject player, SaveSystem saveSystem)
     {
-        GameObject p = GameObject.FindWithTag(PlayerTag);
-        if (p == null) return;
-        var cd = p.GetComponentInChildren<CharacterData>();
+        if (player == null || saveSystem == null) return;
+        var cd = player.GetComponentInChildren<CharacterData>();
         if (cd == null) return;
-        SaveSystem ss = FindFirstObjectByType<SaveSystem>();
-        if (ss == null) return;
-        ss.SaveInventoryData(cd.Inventory);
+        saveSystem.SaveInventoryData(cd.Inventory);
     }
 
-    private void RunSaveEquipment()
+    private void SaveEquipment(GameObject player, SaveSystem saveSystem)
     {
-        GameObject p = GameObject.FindWithTag(PlayerTag);
-        if (p == null) return;
-        var cd = p.GetComponentInChildren<CharacterData>();
+        if (player == null || saveSystem == null) return;
+        var cd = player.GetComponentInChildren<CharacterData>();
         if (cd == null) return;
-        SaveSystem ss = FindFirstObjectByType<SaveSystem>();
-        if (ss == null) return;
-        ss.SaveEquipmentData(cd.Equipment);
+        saveSystem.SaveEquipmentData(cd.Equipment);
     }
 
-    private void RunRestoreInventory(GameObject player)
+    // -- Restore Helpers ------------------------------------------------------
+
+    private void RestoreInventory(GameObject player, SaveSystem saveSystem)
     {
         if (_itemRegistry == null) { Debug.LogWarning("[TravelManager] ItemRegistry not assigned."); return; }
-        SaveSystem ss = FindFirstObjectByType<SaveSystem>();
-        if (ss == null) return;
-        var data = ss.LoadInventoryData();
+        if (saveSystem == null) return;
+        var data = saveSystem.LoadInventoryData();
         if (data == null || data.items == null || data.items.Count == 0) return;
         var cd = player.GetComponentInChildren<CharacterData>();
         if (cd == null) return;
@@ -120,12 +162,10 @@ public class TravelManager : MonoBehaviour
         Debug.Log($"[TravelManager] Inventory restored: {data.items.Count} slot(s).");
     }
 
-    private void RunRestoreEquipment(GameObject player)
+    private void RestoreEquipment(GameObject player, SaveSystem saveSystem)
     {
-        if (_itemRegistry == null) return;
-        SaveSystem ss = FindFirstObjectByType<SaveSystem>();
-        if (ss == null) return;
-        var data = ss.LoadEquipmentData();
+        if (_itemRegistry == null || saveSystem == null) return;
+        var data = saveSystem.LoadEquipmentData();
         if (data == null) return;
         var cd = player.GetComponentInChildren<CharacterData>();
         if (cd == null) return;
@@ -149,16 +189,56 @@ public class TravelManager : MonoBehaviour
         if (item != null) cd.Equipment.Equip(item);
     }
 
-    private System.Collections.IEnumerator NotifyComplete()
+    // -- Coroutine / State ----------------------------------------------------
+
+    /// <summary>
+    /// Waits one frame so all Start() methods in the new scene run first.
+    /// Critically: CharacterData.Init() must run before RestoreEquipment()
+    /// so that m_DefaultWeapon is set. Without this, Init() later calls
+    /// StartingWeapon.UsedBy() -> Equip() -> Unequip() and since m_DefaultWeapon
+    /// was null, it adds the starting weapon to inventory as a duplicate.
+    /// </summary>
+    private IEnumerator RestoreAndNotify(GameObject player, SaveSystem saveSystem)
     {
-        yield return null;
+        yield return null; // wait one frame -- Start() / CharacterData.Init() runs here
+
+        RestoreInventory(player, saveSystem);
+        RestoreEquipment(player, saveSystem);
+        RestoreHealth(player, saveSystem);
+
+        // Fade back in now that the new scene is fully ready
+        _transitionUI?.FadeIn();
+
         GameEvents.RaiseSceneTransitionComplete();
         Debug.Log("[TravelManager] Scene transition complete.");
     }
 
+    private void SaveHealth(GameObject player, SaveSystem saveSystem)
+    {
+        if (player == null || saveSystem == null) return;
+        var cd = player.GetComponentInChildren<CharacterData>();
+        if (cd == null) return;
+        saveSystem.SaveHealthData(cd);
+    }
+
+    private void RestoreHealth(GameObject player, SaveSystem saveSystem)
+    {
+        if (saveSystem == null) return;
+        float pct = saveSystem.LoadHealthData();
+        if (pct < 0f) return;
+        var cd = player.GetComponentInChildren<CharacterData>();
+        if (cd == null) return;
+        // Apply as delta on top of the current (Init-set) health
+        int targetHp = Mathf.RoundToInt(pct * cd.Stats.stats.health);
+        int delta    = targetHp - cd.Stats.CurrentHealth;
+        if (delta != 0) cd.Stats.ChangeHealth(delta);
+        Debug.Log("[TravelManager] Health restored: " + cd.Stats.CurrentHealth + "/" + cd.Stats.stats.health);
+    }
+
     private void ResetTravelState()
     {
-        _isTraveling = false;
+        _isTraveling         = false;
         _pendingSpawnPointID = null;
     }
 }
+
