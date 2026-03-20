@@ -222,6 +222,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1515059effc975b44b959137905d2f4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TravelManager
+  _itemRegistry: {fileID: 11400000, guid: 945fd6f975dece64789ff1ebe3cb68ea, type: 2}
 --- !u!4 &17820454
 Transform:
   m_ObjectHideFlags: 0

@@ -90,7 +90,7 @@ Claude must follow this dependency direction.
   Enemy           -> CharacterData (attack via CharacterData.Attack())
   NPCQuestDialog  -> QuestManager
   NPCTraveler     -> TravelMenuUI -> TravelManager -> SceneManager
-  TravelManager   -> SaveSystem (saves quest data before scene load)
+  TravelManager   -> SaveSystem (saves quest + inventory + equipment before scene load)))
   TravelManager   -> QuestManager (reads quest states)
   QuestManager    -> QuestTracker -> ObjectiveSystem
   SaveSystem      -> PlayerPrefs (persistence)
@@ -180,7 +180,7 @@ Claude must check this before creating scripts.
   QuestTracker    | System     | Tracks active quest progress (objectiveCounts).
                   |            | Raises OnProgressUpdated, OnQuestTrackingStopped.
   ObjectiveSystem | System     | Processes GameEvents -> updates QuestTracker
-  SaveSystem      | System     | Saves/loads quest states via PlayerPrefs
+  SaveSystem      | System     | Saves/loads quest + inventory + equipment via PlayerPrefsia PlayerPrefs
   QuestData       | Data (SO)  | Quest definition: id, name, desc, objectives[]
   QuestDatabase   | Data (SO)  | Collection of all QuestData in project
 
@@ -190,10 +190,11 @@ Claude must check this before creating scripts.
   -----------------------|-----------|------------------------------------------
   TravelManager          | Manager   | Singleton + DontDestroyOnLoad. Handles
                          |           | scene loading, persists SpawnPointID,
-                         |           | saves quest data before scene transition,
-                         |           | teleports player to SpawnPoint after load.
-                         |           | Raises GameEvents.RaiseSceneTransitionComplete
-                         |           | one frame after scene loads.
+                         |           | saves quest + inventory + equipment before
+                         |           | scene transition, restores inventory +
+                         |           | equipment after load, teleports player
+                         |           | to SpawnPoint. Requires ItemRegistry ref.
+                         |           | Raises GameEvents.RaiseSceneTransitionComplete    | one frame after scene loads.
   NPCTraveler            | Controller| Attached to Peasant NPC. Trigger detection,
                          |           | prompt blink (E key), opens/closes TravelMenuUI.
   TravelMenuUI           | UI        | Pre-wired buttons (no Instantiate at runtime).
@@ -290,7 +291,8 @@ Assets/
       RandomBGMPlayer.cs
       CharacterAudio.cs
     Items/
-      Item.cs, Weapon.cs, UsableItem.cs, EquipmentItem.cs
+      Item.cs, Weapon.cs, UsableItem.cs, EquipmentItem.c
+      ItemRegistry.cs                [ScriptableObject registry -- item lookup by name]me]s
       Effects/ (ApplyBurnWeaponEffect, VampiricWeaponEffect, etc.)
       ItemEffect/ (AddHealthEffect, etc.)
     GameplayObject/
@@ -311,6 +313,7 @@ Assets/
       Destination_Necrom.asset
   Prefabs/
     (DestinationButtonPrefab obsolete -- TravelMenuUI now uses pre-wired buttons)
+    ItemDatabase/ItemRegistry.asset    [ScriptableObject -- assign in TravelManager Inspector]]s)
   Scenes/
     MainMenu.unity        (Build Index 0)
     Western Village.unity (Build Index 1)  [primary dev scene]
@@ -548,14 +551,14 @@ Avoid:
 # Current Development Focus
 
 Systems COMPLETE and stable:
-  Travel System      [fully implemented, UI bugs resolved, pre-wired buttons]
+  Travel System      [fully implemented -- inventory + equipment persistence added]
   Quest System       [fully implemented]
   Combat System      [fully implemented -- CombatController refactor complete]
   Enemy AI           [SimpleEnemyController + SkeletonMageBoss implemented]
   NPC Dialog System  [NPCQuestDialog with prerequisite gating]
 
 Systems that may need expansion:
-  Save System        [currently PlayerPrefs-based -- may need file-based save later]
+  Save System        [PlayerPrefs-based -- handles quest + inventory + equipment]t]]
   Inventory / Equipment UI
   Audio wiring per scene (BGM / SFX)
 
@@ -563,7 +566,7 @@ Systems that may need expansion:
 
 # Known Issues & Technical Debt
 
-No critical issues as of 2026-03-16.
+No critical issues as of 2026-03-20.
 
 Minor notes:
   - SimpleEnemyController is Update()-heavy -- acceptable for current enemy count.
@@ -591,7 +594,17 @@ Minor notes:
   2026-03-16   | CLAUDE.md full rewrite -- reflects actual codebase  | Moon
                | Added: namespace map, combat system design,        |
                | enemy AI details, scene hierarchy, complete        |
-               | script responsibility table, known issues updated  |
+               | script responsibility table, known issu
+2026-03-20   | Fixed bug: Inventory reset on scene transition      | Moon
+               | Root cause: InventorySystem was in-memory only,    |
+               | destroyed with PlayerCore on LoadScene().          |
+2026-03-20   | Created ItemRegistry ScriptableObject               | Moon
+               | (Assets/Scripts/Items/ItemRegistry.cs)             |
+               | Assign asset in TravelManager Inspector.           |
+2026-03-20   | Extended SaveSystem: added Inventory + Equipment    | Moon
+               | persistence via PlayerPrefs (3 separate keys).     |
+2026-03-20   | Extended TravelManager: saves inventory + equipment | Moon
+               | before LoadScene(), restores after OnSceneLoaded(). |es updated  |
 
 ---
 

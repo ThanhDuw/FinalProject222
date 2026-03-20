@@ -113,6 +113,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 7b0cf46482c46934e9a0b9dd41b0440a, type: 3}
   - {fileID: 8300000, guid: 11f81a1d4cbde2f4e943503e5e123e5e, type: 3}
   - {fileID: 8300000, guid: 10f3af480312d4f408f699205054cf74, type: 3}
+  cameraRotateSpeed: 180
 --- !u!114 &5549394745342254537
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -200,10 +201,10 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5549394745342254548}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}

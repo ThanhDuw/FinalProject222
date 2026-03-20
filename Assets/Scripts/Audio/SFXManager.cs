@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using CreatorKitCode;
 using UnityEngine;
@@ -109,14 +109,15 @@ namespace CreatorKitCode
         /// </summary>
         /// <param name="useType">The type of sound (map to a specific mixer)</param>
         /// <param name="data">The PlayData that contains all the data of the sound to play (clip, volume, position etc.)</param>
-        public static void PlaySound(Use useType, PlayData data)
+public static void PlaySound(Use useType, PlayData data)
         {
             var source = GetSource(useType);
 
             source.clip = data.Clip;
             source.gameObject.transform.position = data.Position;
             source.pitch = Random.Range(data.PitchMin, data.PitchMax);
-            source.volume = data.Volume;
+            // Scale by global SFX volume set via AudioVolumeController slider
+            source.volume = data.Volume * AudioVolumeController.SFXVolume;
         
             source.Play();
         }
