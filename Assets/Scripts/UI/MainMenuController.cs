@@ -33,7 +33,8 @@ public class MainMenuController : MonoBehaviour
 
     // ── Scene ─────────────────────────────────────────────────────────────────
     [Header("Scene")]
-    [SerializeField] private string gameSceneName = "Western Village";
+    [SerializeField] private string             gameSceneName  = "Western Village";
+    
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -51,7 +52,11 @@ public class MainMenuController : MonoBehaviour
     private void Start()
     {
         SetPanel(optionsPanel, false);
-        SetPanel(helpPanel, false);
+        SetPanel(helpPanel,    false);
+
+        // Fade in when MainMenu first opens
+        SceneTransitionUI.Instance?.FadeIn();
+        
     }
 
     private void OnDestroy()
@@ -130,7 +135,10 @@ public class MainMenuController : MonoBehaviour
             Debug.LogError("[MainMenuController] gameSceneName is empty. Check Inspector.");
             return;
         }
-        SceneManager.LoadScene(sceneName);
+        if (TravelManager.Instance != null)
+            TravelManager.Instance.TravelFromMainMenu(sceneName);
+        else
+            SceneManager.LoadScene(sceneName);
     }
 
     private bool HasSaveData()

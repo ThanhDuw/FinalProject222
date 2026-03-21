@@ -31,9 +31,35 @@ public class TravelManager : MonoBehaviour
 
     /// <summary>
     /// Initiates travel to the destination.
-    /// Caches SaveSystem, QuestTracker, and Player ONCE then passes them
-    /// to all Save helpers -- avoids repeated FindFirstObjectByType calls.
     /// </summary>
+    /// <summary>
+    /// Called by MainMenuController to start the game from the Main Menu.
+    /// Sets _isTraveling = true so OnSceneLoaded() does not early-return,
+    /// ensuring FadeIn() is called after the first game scene loads.
+    /// No save/restore needed -- this is a fresh game start.
+    /// </summary>
+    public void TravelFromMainMenu(string sceneName)
+    {
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            Debug.LogWarning("[TravelManager] TravelFromMainMenu: sceneName is empty.");
+            return;
+        }
+        if (_isTraveling)
+        {
+            Debug.LogWarning("[TravelManager] Already traveling.");
+            return;
+        }
+
+        _isTraveling         = true;
+        _pendingSpawnPointID = null; // no specific spawn point from MainMenu
+
+        if (_transitionUI != null)
+            _transitionUI.FadeOut(() => SceneManager.LoadScene(sceneName));
+        else
+            SceneManager.LoadScene(sceneName);
+    }
+
     public void TravelTo(TravelDestinationData destination)
     {
         if (destination == null)      { Debug.LogWarning("[TravelManager] Null destination."); return; }
@@ -65,6 +91,10 @@ public class TravelManager : MonoBehaviour
             SceneManager.LoadScene(destination.BuildIndex);
         }
     }
+
+    /// <summary>
+    /// Called by MainMenuController to load the first game scene.
+    
 
     // -- Scene Loaded ---------------------------------------------------------
 

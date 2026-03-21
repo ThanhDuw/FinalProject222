@@ -10,13 +10,12 @@ using UnityEngine.UI;
 /// Attach to the TravelManager GameObject alongside TravelManager.
 ///
 /// Setup in Inspector:
-///   1. Assign _fadePanel (an Image component covering full screen)
-///   2. The Image's GameObject must also have a CanvasGroup component
-///   3. The parent Canvas must be Screen Space - Overlay, Sort Order 999
+///   1. Assign _fadePanel (CanvasGroup on the FadePanel Image)
+///   2. Parent Canvas: Screen Space - Overlay, Sort Order 999
 ///
 /// Dependency flow:
 ///   TravelManager -> SceneTransitionUI.FadeOut() -> SceneManager.LoadScene()
-///   SceneManager.sceneLoaded -> SceneTransitionUI auto FadeIn
+///   TravelManager.RestoreAndNotify() -> SceneTransitionUI.FadeIn()
 /// </summary>
 public class SceneTransitionUI : MonoBehaviour
 {
@@ -24,7 +23,7 @@ public class SceneTransitionUI : MonoBehaviour
 
     public static SceneTransitionUI Instance { get; private set; }
 
-    // -- Inspector References -------------------------------------------------
+    // -- Inspector ------------------------------------------------------------
 
     [Header("Fade Settings")]
     [SerializeField] private CanvasGroup _fadePanel;
@@ -43,7 +42,6 @@ public class SceneTransitionUI : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Ensure panel starts invisible and does not block input
         if (_fadePanel != null)
         {
             _fadePanel.alpha          = 0f;
@@ -55,8 +53,8 @@ public class SceneTransitionUI : MonoBehaviour
     // -- Public API -----------------------------------------------------------
 
     /// <summary>
-    /// Fades the screen to black, then invokes onComplete.
-    /// TravelManager calls this before SceneManager.LoadScene().
+    /// Fades to black then invokes onComplete.
+    /// Call before SceneManager.LoadScene().
     /// </summary>
     public void FadeOut(Action onComplete)
     {
@@ -64,31 +62,29 @@ public class SceneTransitionUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Fades the screen back to clear.
-    /// Called automatically by TravelManager inside RestoreAndNotify()
-    /// after inventory, equipment, and health have been restored.
+    /// Fades back to clear.
+    /// Call after the new scene is fully restored and ready.
     /// </summary>
     public void FadeIn()
     {
         StartCoroutine(DoFade(1f, 0f, null));
     }
 
-    // -- Private --------------------------------------------------------------
+    // -- Internal -------------------------------------------------------------
 
     private IEnumerator DoFade(float fromAlpha, float toAlpha, Action onComplete)
     {
         if (_fadePanel == null)
         {
-            Debug.LogWarning("[SceneTransitionUI] _fadePanel is not assigned in the Inspector.");
+            Debug.LogWarning("[SceneTransitionUI] _fadePanel not assigned in Inspector.");
             onComplete?.Invoke();
             yield break;
         }
 
-        // Block raycasts while fading in (screen going dark)
         _fadePanel.blocksRaycasts = (toAlpha > 0f);
         _fadePanel.interactable   = false;
 
-        float elapsed = 0f;
+        float elapsed    = 0f;
         _fadePanel.alpha = fromAlpha;
 
         while (elapsed < _fadeDuration)
@@ -100,11 +96,8 @@ public class SceneTransitionUI : MonoBehaviour
 
         _fadePanel.alpha = toAlpha;
 
-        // When fully faded in (alpha = 0), allow input again
         if (toAlpha <= 0f)
-        {
             _fadePanel.blocksRaycasts = false;
-        }
 
         onComplete?.Invoke();
     }
