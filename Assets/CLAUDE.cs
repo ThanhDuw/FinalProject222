@@ -232,9 +232,11 @@ ITravelMenu            | Interface | Contract: Show(destinations, callback), Hid
   QuestTrackerUI      | UI   | Single quest tracker row display
   TrackQuestButton    | UI   | Button to toggle QuestTrackerManager panel
   MenuController      | UI   | Controls main menu panels
-MinimapController   | UI   | Attached to MinimapCamera (child of Character).
+MiMinimapController   | UI   | Attached to MinimapCamera (child of Character).
                       |      | Locks camera height=30 and rotation=90 in
-                      |      | LateUpdate so minimap always looks straight down.
+                      |      | LateUpdate. Camera settings: orthographic,
+                      |      | orthoSize=15, depth=-2, clearFlags=SolidColor
+                      |      | (black), cullingMask=Everything.lways looks straight down.
 
 ---
 
@@ -289,7 +291,7 @@ Assets/
     UI/
       TravelMenuUI.cs
       SceneTransitionUI.cs   [Singleton, DontDestroyOnLoad -- fade transiti
-      MinimapController.cs    [Minimap camera controller -- child of Character]ons]
+      MinimapController.cs    [Minimap camera controller -- child of Character]ns]
       UISystem.cs
       DamageUI.cs
       InventoryUI.cs
@@ -676,7 +678,12 @@ Minor notes:
                | Fixed MinimapPanel placed in UIRoot instead of      |
                | UIRoot/GameUI in Desert and Necrom scenes.          |
                | All 3 scenes verified: Camera OK, Panel in GameUI,  |
-               | texture=MinimapRT, ortho=True, depth=-2.            |apBorder    |            |crom.       |eneLoaded(). |es updated  |
+               | texture=MinimapRT, ortho=True, depth=-2
+2026-03-21   | Fixed Minimap blank/yellow display (all 3 scenes)   | Moon
+               | Root cause: clearFlags=Skybox filled RenderTexture   |
+               | with Desert's yellow skybox before rendering terrain.|
+               | Fix: clearFlags=SolidColor (black), orthoSize 25->15 |
+               | (more detail), cullingMask=Everything (all layers).  |.            |apBorder    |            |crom.       |eneLoaded(). |es updated  |
 
 ---
 

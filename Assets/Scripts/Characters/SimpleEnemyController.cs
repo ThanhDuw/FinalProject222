@@ -91,9 +91,19 @@ void Update()
                 if(m_LootSpawner != null)
                     m_LootSpawner.SpawnLoot();
             
-                Destroy(m_Agent);
-                Destroy(GetComponent<Collider>());
-                Destroy(this);
+                // If this enemy is pool-managed, let EnemyPoolTracker handle cleanup.
+                // Otherwise fall back to the original Destroy approach.
+                var tracker = GetComponent<EnemyPoolTracker>();
+                if (tracker != null)
+                {
+                    tracker.OnEnemyDied();
+                }
+                else
+                {
+                    Destroy(m_Agent);
+                    Destroy(GetComponent<Collider>());
+                    Destroy(this);
+                };
                 return;
             }
         
