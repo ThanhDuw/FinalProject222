@@ -232,6 +232,9 @@ ITravelMenu            | Interface | Contract: Show(destinations, callback), Hid
   QuestTrackerUI      | UI   | Single quest tracker row display
   TrackQuestButton    | UI   | Button to toggle QuestTrackerManager panel
   MenuController      | UI   | Controls main menu panels
+MinimapController   | UI   | Attached to MinimapCamera (child of Character).
+                      |      | Locks camera height=30 and rotation=90 in
+                      |      | LateUpdate so minimap always looks straight down.
 
 ---
 
@@ -285,7 +288,8 @@ Assets/
       ITravelMenu.cs
     UI/
       TravelMenuUI.cs
-      SceneTransitionUI.cs   [Singleton, DontDestroyOnLoad -- fade transitions]
+      SceneTransitionUI.cs   [Singleton, DontDestroyOnLoad -- fade transiti
+      MinimapController.cs    [Minimap camera controller -- child of Character]ons]
       UISystem.cs
       DamageUI.cs
       InventoryUI.cs
@@ -323,7 +327,9 @@ Assets/
     (DestinationButtonPrefab obsolete -- TravelMenuUI now uses pre-wired buttons)
     ItemDatabase/ItemRegistry.asset    [ScriptableObject -- assign in TravelManager Inspector]
     Systems/TravelManager.prefab       [DDOL prefab: TravelManager + SceneTransitionUI + Canvas/FadePanel])
-  Scenes/
+  ScenesRenderTextures/
+    MinimapRT.renderTexture      [256x256, used by MinimapCamera Target Texture]
+  /
     MainMenu.unity        (Build Index 0)
     Western Village.unity (Build Index 1)  [primary dev scene]
     Desert.unity          (Build Index 2)
@@ -348,7 +354,9 @@ Root GameObjects in Western Village scene:
   Nolant                  [NPCQuestDialog -- Quest NPC]
   QuestSystem             [QuestManager + QuestTracker + ObjectiveSystem]
   TravelManager           [TravelManager + SceneTransitionUI -- prefab instance]]
-  SpawnPoint_WesternVillage
+  SpawnPoint_WesternVilla
+  PlayerCore/Character/MinimapCamera [Camera ortho, depth=-2, renders to MinimapRT]
+  -- MinimapPanel (GameUI) + MinimapCamera present in ALL 3 game scenes
 
 ---
 
@@ -562,6 +570,7 @@ Avoid:
 
 Systems COMPLETE and stable:
   Travel System      [fully implemented -- persistence + fade transitions complete]]
+  Minimap System     [fully implemented -- MinimapCamera + RenderTexture + UI widget]
   Quest System       [fully implemented]
   Combat System      [fully implemented -- CombatController refactor complete]
   Enemy AI           [SimpleEnemyController + SkeletonMageBoss implemented]
@@ -652,7 +661,22 @@ Minor notes:
 2026-03-21   | Updated CLAUDE.md: SceneTransitionUI added to       | Moon
                | Infrastructure Layer, Script Responsibility Table,  |
                | Codebase Structure, DontDestroyOnLoad section,      |
-               | Prefabs section, and Changelog.                     |crom.       |eneLoaded(). |es updated  |
+               | Prefabs section, and Changelog.         
+2026-03-21   | Implemented Minimap System                          | Moon
+               | - Added layer 17 (Minimap)                          |
+               | - Created MinimapController.cs (Scripts/UI/)        |
+               | - Created MinimapRT.renderTexture (256x256)         |
+               | - MinimapCamera: child of Character, orthographic,  |
+               |   depth=-2, culls UI layer, renders to MinimapRT   |
+               | - MinimapPanel UI in GameUI (bottom-right, 180x180) |
+               |   MinimapMask > MinimapImage (RawImage=MinimapRT)   |
+               |   + PlayerDot (red dot, center) + Minim
+2026-03-21   | Fixed Minimap: Desert + Necrom missing camera       | Moon
+               | targetTexture and wrong depth (was 0, fixed to -2). |
+               | Fixed MinimapPanel placed in UIRoot instead of      |
+               | UIRoot/GameUI in Desert and Necrom scenes.          |
+               | All 3 scenes verified: Camera OK, Panel in GameUI,  |
+               | texture=MinimapRT, ortho=True, depth=-2.            |apBorder    |            |crom.       |eneLoaded(). |es updated  |
 
 ---
 
