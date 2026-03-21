@@ -69,6 +69,7 @@ Claude must maintain a mental map of the project architecture.
   GameManager
   TravelManager   [DontDestroyOnLoad -- Singleton]
   QuestManager    [DontDestroyOnLoad -- Singleton]
+  SceneTransitionUI [DontDestroyOnLoad -- Singleton, prefab on TravelManager GO]]
 
 Claude must respect this layered structure.
 
@@ -202,7 +203,13 @@ Claude must check this before creating scripts.
                          |           | by NPCTraveler. Buttons assigned in Inspector.
   TravelDestinationData  | Data (SO) | Destination name, build index, SpawnPoint ID,
                          |           | description, availability flag.
-  ITravelMenu            | Interface | Contract: Show(destinations, callback), Hide()
+  SceneTransitionUI      | UI        | Singleton + DontDestroyOnLoad. Full-screen
+                         |           | fade transition (CanvasGroup alpha lerp).
+                         |           | FadeOut(callback) before LoadScene,
+                         |           | FadeIn() after restore. Lives on
+                         |           | TravelManager prefab. Used by both
+                         |           | TravelManager and MainMenuController.
+ITravelMenu            | Interface | Contract: Show(destinations, callback), Hide()
 
 ## NPC Scripts
 
@@ -278,6 +285,7 @@ Assets/
       ITravelMenu.cs
     UI/
       TravelMenuUI.cs
+      SceneTransitionUI.cs   [Singleton, DontDestroyOnLoad -- fade transitions]
       UISystem.cs
       DamageUI.cs
       InventoryUI.cs
@@ -313,7 +321,8 @@ Assets/
       Destination_Necrom.asset
   Prefabs/
     (DestinationButtonPrefab obsolete -- TravelMenuUI now uses pre-wired buttons)
-    ItemDatabase/ItemRegistry.asset    [ScriptableObject -- assign in TravelManager Inspector]]s)
+    ItemDatabase/ItemRegistry.asset    [ScriptableObject -- assign in TravelManager Inspector]
+    Systems/TravelManager.prefab       [DDOL prefab: TravelManager + SceneTransitionUI + Canvas/FadePanel])
   Scenes/
     MainMenu.unity        (Build Index 0)
     Western Village.unity (Build Index 1)  [primary dev scene]
@@ -338,7 +347,7 @@ Root GameObjects in Western Village scene:
   Cowboy                  [NPCQuestDialog -- Quest NPC]
   Nolant                  [NPCQuestDialog -- Quest NPC]
   QuestSystem             [QuestManager + QuestTracker + ObjectiveSystem]
-  TravelManager           [TravelManager Singleton]
+  TravelManager           [TravelManager + SceneTransitionUI -- prefab instance]]
   SpawnPoint_WesternVillage
 
 ---
@@ -370,6 +379,7 @@ Root GameObjects in Western Village scene:
 
 - TravelManager (Singleton)
 - QuestManager  (Singleton)
+- SceneTransitionUI (Singleton -- lives on TravelManager GO)
 - PlayerCore is DUPLICATED per scene -- NOT shared across scenes.
 - When LoadScene(Single) runs, the old scene is destroyed except DDOL objects.
 
@@ -551,7 +561,7 @@ Avoid:
 # Current Development Focus
 
 Systems COMPLETE and stable:
-  Travel System      [fully implemented -- inventory + equipment persistence added]
+  Travel System      [fully implemented -- persistence + fade transitions complete]]
   Quest System       [fully implemented]
   Combat System      [fully implemented -- CombatController refactor complete]
   Enemy AI           [SimpleEnemyController + SkeletonMageBoss implemented]
@@ -621,7 +631,28 @@ Minor notes:
                | equipment is applied in RestoreAndNotify().        |
 2026-03-20   | Fixed bug: Desert/Necrom had no QuestSystem/Save    | Moon
                | System -- added QuestSystem to both scenes.        |
-               | Removed duplicate TravelManager from Necrom.       |eneLoaded(). |es updated  |
+               | Removed duplicate TravelManager from Ne
+2026-03-21   | Created SceneTransitionUI.cs (Singleton DDOL)       | Moon
+               | Full-screen CanvasGroup fade. FadeOut(callback)     |
+               | before LoadScene, FadeIn() after restore.           |
+               | Placed on TravelManager GO alongside TravelManager. |
+2026-03-21   | Added TravelFromMainMenu(sceneName) to TravelManager | Moon
+               | Sets _isTraveling=true so OnSceneLoaded() does not  |
+               | early-return when entering from MainMenu.           |
+               | FadeIn() called after restore completes.            |
+2026-03-21   | Updated MainMenuController: removed _transitionUI    | Moon
+               | field, now calls TravelManager.Instance.             |
+               | TravelFromMainMenu(). FadeIn via                    |
+               | SceneTransitionUI.Instance on Start().              |
+2026-03-21   | Created TravelManager prefab                         | Moon
+               | (Assets/Prefabs/Systems/TravelManager.prefab)       |
+               | Contains TravelManager + SceneTransitionUI +        |
+               | Canvas (Sort Order 999) + FadePanel (CanvasGroup).  |
+               | Placed in MainMenu scene as DDOL entry point.       |
+2026-03-21   | Updated CLAUDE.md: SceneTransitionUI added to       | Moon
+               | Infrastructure Layer, Script Responsibility Table,  |
+               | Codebase Structure, DontDestroyOnLoad section,      |
+               | Prefabs section, and Changelog.                     |crom.       |eneLoaded(). |es updated  |
 
 ---
 
