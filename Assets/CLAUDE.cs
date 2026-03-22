@@ -692,7 +692,18 @@ Minor notes:
                | Fix: Deleted MinimapBorder GameObject from scene.   |
                | Also hardened: clearFlags=SolidColor, depth=-2,     |
                | MinimapRT re-assigned to Camera + RawImage.         |
-               | Western Village scene saved via MCP.                |(). |es updated  |
+               | Western Village scene saved via MCP.    
+2026-03-22   | Implemented Minimap dot color system (all 3 scenes) | Moon
+               | Player=Green, NPC=Blue, Enemy=Red.                  |
+               | Extended MinimapController.cs: SpawnDotsForTag()    |
+               | + UpdateDots() + RegisterEnemy() for runtime spawn. |
+               | Fixed _mapHalfSize=0 bug: moved Canvas.ForceUpdate  |
+               | Canvases() + rect.width read into Start() (was in    |
+               | Awake() before Canvas layout ran). Added safety      |
+               | recalc guard in UpdateDots().                       |
+               | Tagged NPCs (Peasant/Cowboy/Nolant) as "NPC" and    |
+               | Enemies as "Enemy" in all 3 scenes.                 |
+               | Wired MinimapController Inspector in Desert+Necrom. |            |(). |es updated  |
 
 ---
 
