@@ -683,7 +683,16 @@ Minor notes:
                | Root cause: clearFlags=Skybox filled RenderTexture   |
                | with Desert's yellow skybox before rendering terrain.|
                | Fix: clearFlags=SolidColor (black), orthoSize 25->15 |
-               | (more detail), cullingMask=Everything (all layers).  |.            |apBorder    |            |crom.       |eneLoaded(). |es updated  |
+               | (more detail), cullingMask=Everything (all layers).  |.            |apBorder    |            |crom.       |eneLoaded
+2026-03-22   | Fixed Minimap yellow square (Western Village)       | Moon
+               | Root cause: MinimapBorder UI GameObject (Image with |
+               | solid yellow color) was layered on top of           |
+               | MinimapImage (RawImage), fully blocking the          |
+               | RenderTexture output from being visible.             |
+               | Fix: Deleted MinimapBorder GameObject from scene.   |
+               | Also hardened: clearFlags=SolidColor, depth=-2,     |
+               | MinimapRT re-assigned to Camera + RawImage.         |
+               | Western Village scene saved via MCP.                |(). |es updated  |
 
 ---
 
