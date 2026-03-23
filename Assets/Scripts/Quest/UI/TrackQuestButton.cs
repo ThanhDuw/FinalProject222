@@ -10,8 +10,14 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Button))]
 public class TrackQuestButton : MonoBehaviour
 {
-    private void Start()
+private QuestTrackerManager _tracker;
+
+    
+private void Start()
     {
+        _tracker = FindFirstObjectByType<QuestTrackerManager>();
+        if (_tracker == null)
+            Debug.LogWarning("[TrackQuestButton] QuestTrackerManager not found in scene.");
         var btn = GetComponent<Button>();
         if (btn != null)
             btn.onClick.AddListener(OnClick);
@@ -24,12 +30,9 @@ public class TrackQuestButton : MonoBehaviour
             btn.onClick.RemoveListener(OnClick);
     }
 
-    private void OnClick()
+private void OnClick()
     {
-        var tracker = FindFirstObjectByType<QuestTrackerManager>();
-        if (tracker != null)
-            tracker.TogglePanel();
-        else
-            Debug.LogWarning("[TrackQuestButton] QuestTrackerManager not found in scene.");
+        if (_tracker != null)
+            _tracker.TogglePanel();
     }
 }

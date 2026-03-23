@@ -19,9 +19,10 @@ MonoBehaviour:
     before it spreads."
   objectives:
   - objectiveID: obj_02_kill_skeleton
-    description: Eliminate Skeletons (0/15)
+    description: 'Eliminate Skeletons '
     type: 0
     targetID: Skeleton
     requiredAmount: 15
   experienceReward: 120
   goldReward: 250
+  itemReward: {fileID: 11400000, guid: 4500b95fa4b4f9e46842bec4714c7c33, type: 2}

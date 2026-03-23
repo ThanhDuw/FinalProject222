@@ -703,7 +703,28 @@ Minor notes:
                | recalc guard in UpdateDots().                       |
                | Tagged NPCs (Peasant/Cowboy/Nolant) as "NPC" and    |
                | Enemies as "Enemy" in all 3 scenes.                 |
-               | Wired MinimapController Inspector in Desert+Necrom. |            |(). |es updated  |
+               | Wired MinimapController Inspector in Desert+Necrom. |            
+2026-03-22   | Refactored Minimap dot system (all 3 scenes)         | Moon
+               | Replaced UI overlay + script math approach with      |
+               | world-space MinimapMarker.cs (quad on layer Minimap). |
+               | Created MinimapMarker.cs (Scripts/UI/) -- attaches   |
+               | flat quad child above entity, URP Unlit material,    |
+               | only visible to MinimapCamera (cullingMask).         |
+               | Simplified MinimapController.cs to camera-lock only. |
+               | Added MinimapMarker to all NPCs (blue) and Enemies   |
+               | (red) in all 3 scenes. Main Camera cullingMask       |
+               | updated to exclude Minimap layer in all 3 scenes.   |
+2026-03-22   | Implemented Quest Item Reward system                | Moon
+               | Extended QuestData.cs: added itemReward (Item SO)   |
+               | field + using CreatorKitCode namespace.             |
+               | Extended QuestManager.CompleteQuest(): grants item  |
+               | reward via CharacterData.Inventory.AddItem() after  |
+               | quest completes. Fixed syntax error in CompleteQuest|
+               | caused by bad text edit (anchor_replace used).      |
+               | Assigned rewards in Inspector:                      |
+               | Quest_01 -> MetalAxe.asset                          |
+               | Quest_02 -> WarriorHelmet.asset                     |
+               | Quest_03 -> LegendaryRake.asset                     ||(). |es updated  |
 
 ---
 

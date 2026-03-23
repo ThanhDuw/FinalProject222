@@ -931,13 +931,13 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 10
     m_MaxSize: 40
-    m_Alignment: 4
+    m_Alignment: 3
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u2699\uFE0F  Quality                  [ High ]"
+  m_Text: 'Full Screen / Window '
 --- !u!222 &307353557
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2256,10 +2256,10 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "CONTROLS\n\nW / A / S / D       Move character\nRight mouse                   
-    Look around\nE                              Interact with NPC\nLeft Click              
-    Attack/Loot\nTab                          Open Quest Log\nEsc                         
-    Menu\nB\t\t\t   Open Iventory"
+  m_Text: "CONTROLS\n\nW / A / S / D       \tMove character\nRight mouse        Look
+    around\nE                           \tInteract with NPC\nLeft Click             
+    Attack/Loot\nTab                        Open Quest Log\nEsc                        
+    Menu\nB\t\t\t  \t\t\t\t\tOpen Iventory"
 --- !u!222 &1446527842
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2445,6 +2445,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: TravelManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 4181389002960457752, guid: ee3ae284a5a24f4468a387c5ceb73988,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7875758034316823845, guid: ee3ae284a5a24f4468a387c5ceb73988,
         type: 3}

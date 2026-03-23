@@ -53,7 +53,7 @@ public class QuestManager : MonoBehaviour
         }
 
         // Subscribe to progress changed events to detect completion
-        GameEvents.OnQuestProgressChanged  += HandleQuestProgressChanged;
+        GameEvents.OnQuestProgressChanged   += HandleQuestProgressChanged;
         GameEvents.OnSceneTransitionComplete += RestoreQuestStateAfterSceneLoad;
 
         // Start deferred notification coroutine so other Start() methods (e.g., UI) can subscribe first
@@ -76,15 +76,19 @@ public class QuestManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        GameEvents.OnQuestProgressChanged  -= HandleQuestProgressChanged;
+        GameEvents.OnQuestProgressChanged   -= HandleQuestProgressChanged;
         GameEvents.OnSceneTransitionComplete -= RestoreQuestStateAfterSceneLoad;
     }
 
     private void HandleQuestProgressChanged(string questID)
     {
-        // Called when QuestTracker reports changes — check if quest is completed
+        // Called when QuestTracker reports changes -- check if all objectives are satisfied
         var progress = questTracker?.GetProgress(questID);
         if (progress == null) return;
+
+        // Already past Active state -- ignore redundant events
+        if (questStates.TryGetValue(questID, out var currentState) &&
+            currentState != QuestState.Active) return;
 
         bool allSatisfied = true;
         foreach (var obj in progress.questData.objectives)
@@ -99,8 +103,30 @@ public class QuestManager : MonoBehaviour
 
         if (allSatisfied)
         {
-            CompleteQuest(questID);
+            // Do NOT complete the quest automatically.
+            // Mark it ReadyToTurnIn so the player must return to the NPC to turn in.
+            MarkReadyToTurnIn(questID);
         }
+    }
+
+    /// <summary>
+    /// Marks a quest as ready to turn in.
+    /// All objectives are satisfied but reward is not granted yet.
+    /// The player must return to the NPC and confirm via dialogue.
+    /// </summary>
+    public void MarkReadyToTurnIn(string questID)
+    {
+        if (string.IsNullOrEmpty(questID)) return;
+        if (!questStates.ContainsKey(questID)) return;
+        if (questStates[questID] != QuestState.Active) return; // only transition from Active
+
+        questStates[questID] = QuestState.ReadyToTurnIn;
+
+        // Keep quest tracked so the HUD continues to show it
+        // (QuestTracker entry is NOT removed until CompleteQuest is called by NPC dialog)
+        var quest = questDatabase?.GetQuestByID(questID);
+        if (quest != null)
+            Debug.Log($"[QuestManager] Quest '{quest.questName}' is ready to turn in.");
     }
 
     // ── Public API ───────────────────────────────────────────────────────────
@@ -110,7 +136,6 @@ public class QuestManager : MonoBehaviour
     {
         if (quest == null) return;
 
-        // Vấn đề 3: kiểm tra quest tồn tại trong database để tránh nhận quest "lạ"
         if (questDatabase == null || !questDatabase.Contains(quest.questID))
         {
             Debug.LogWarning($"Attempted to start unknown quest '{quest?.questID}'. Ignored.");
@@ -134,7 +159,25 @@ public class QuestManager : MonoBehaviour
 
         var quest = questDatabase?.GetQuestByID(questID);
         if (quest != null)
+        {
             OnQuestCompleted?.Invoke(quest);
+
+            // Grant item reward if defined on this quest.
+            // FIX: PlayerCore (tagged "Player") has no CharacterData directly --
+            // CharacterData lives on the child GameObject "Character".
+            // Use FindWithTag + GetComponentInChildren to find it reliably.
+            if (quest.itemReward != null)
+            {
+                var playerGO   = GameObject.FindWithTag("Player");
+                var playerData = playerGO != null
+                    ? playerGO.GetComponentInChildren<CreatorKitCode.CharacterData>()
+                    : null;
+                if (playerData != null)
+                    playerData.Inventory.AddItem(quest.itemReward);
+                else
+                    Debug.LogWarning($"[QuestManager] CompleteQuest '{questID}': CharacterData not found -- item reward not granted.");
+            }
+        }
 
         // Stop tracking
         questTracker?.UntrackQuest(questID);
@@ -176,7 +219,7 @@ public class QuestManager : MonoBehaviour
         return list;
     }
 
-    // -- Quest Restore After Scene Load ------------------------------------
+    // ── Quest Restore After Scene Load ────────────────────────────────────────
 
     /// <summary>
     /// Called one frame after a new scene finishes loading
@@ -246,5 +289,4 @@ public class QuestManager : MonoBehaviour
 
         Debug.Log($"[QuestManager] Restored {retracked} active quest(s) after scene transition.");
     }
-
 }

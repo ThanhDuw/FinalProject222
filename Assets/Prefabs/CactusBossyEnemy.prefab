@@ -110,7 +110,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c45ba4cd943b6c745bb32ca76b631cff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CharacterName: Cactus Bossy
+  CharacterName: Elite Cactus
   Stats:
     baseStats:
       health: 60

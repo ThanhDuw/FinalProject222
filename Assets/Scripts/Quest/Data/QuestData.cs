@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using CreatorKitCode;
+
 
 [CreateAssetMenu(fileName = "NewQuest", menuName = "Quest System/Quest Data")]
 public class QuestData : ScriptableObject
@@ -16,6 +18,7 @@ public class QuestData : ScriptableObject
     [Header("Rewards")]
     public int experienceReward;
     public int goldReward;
+    public Item itemReward; // ScriptableObject asset -- assign MetalAxe / WarriorHelmet / LegendaryRake in Inspector
 }
 
 [Serializable]
@@ -30,4 +33,4 @@ public class ObjectiveData
 
 public enum ObjectiveType { KillEnemy, CollectItem, TalkToNPC, ReachLocation }
 
-public enum QuestState { Inactive, Active, Completed, Failed }
+public enum QuestState { Inactive, Active, Completed, Failed, ReadyToTurnIn }

@@ -22,11 +22,12 @@ MonoBehaviour:
     description: 'Eliminate Cactus enemies '
     type: 0
     targetID: Cactus Nails
-    requiredAmount: 5
+    requiredAmount: 1
   - objectiveID: obj_01_kill_elite_cactus
     description: 'Defeat the Elite Cactus '
     type: 0
-    targetID: Cactus Bossy
+    targetID: Elite Cactus
     requiredAmount: 1
   experienceReward: 50
   goldReward: 100
+  itemReward: {fileID: 11400000, guid: 8abc265cf8116f84aa4fc52c5107ced0, type: 2}

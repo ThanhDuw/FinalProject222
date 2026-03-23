@@ -25,3 +25,4 @@ MonoBehaviour:
     requiredAmount: 1
   experienceReward: 300
   goldReward: 500
+  itemReward: {fileID: 11400000, guid: 62615692eb539644ebf9b0d21f4b5d48, type: 2}
