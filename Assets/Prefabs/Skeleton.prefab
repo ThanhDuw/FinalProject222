@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1166589551276437846}
   - component: {fileID: 1217747735461502804}
   - component: {fileID: 1442599729692050559}
+  - component: {fileID: -8624524323416752996}
   m_Layer: 11
   m_Name: Skeleton
   m_TagString: Enemy
@@ -72,7 +73,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CreatorKitCodeInternal.SimpleEnemyController
   Speed: 6
   detectionRadius: 10
-  SpottedAudioClip: []
+  SpottedAudioClip:
+  - {fileID: 8300000, guid: b3d7260cb4afa094f856d291fdbfc990, type: 3}
 --- !u!114 &1217747735461502804
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -95,7 +97,8 @@ MonoBehaviour:
       elementalProtection: 00000000000000000000000000000000
       elementalBoosts: 00000000000000000000000000000000
   StartingWeapon: {fileID: 11400000, guid: 561fcd00f9e66ef438e80d88a9961167, type: 2}
-  HitClip: []
+  HitClip:
+  - {fileID: 8300000, guid: de3e0af4aa52ba84f87f9d31ed46af7b, type: 3}
 --- !u!136 &1442599729692050559
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -119,6 +122,27 @@ CapsuleCollider:
   m_Height: 1.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &-8624524323416752996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1534584598814331549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ebaeb8c6b9527f47b54aecef149ed2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CreatorKitCodeInternal.CharacterAudio
+  FootstepClips:
+  - {fileID: 8300000, guid: 5655a878acf6f514685132763b2a23bc, type: 3}
+  VocalAttack:
+  - {fileID: 8300000, guid: b3d7260cb4afa094f856d291fdbfc990, type: 3}
+  VocalHit:
+  - {fileID: 8300000, guid: de3e0af4aa52ba84f87f9d31ed46af7b, type: 3}
+  DeathClips:
+  - {fileID: 8300000, guid: b3d7260cb4afa094f856d291fdbfc990, type: 3}
+  UseType: 0
 --- !u!1001 &3762947280351728635
 PrefabInstance:
   m_ObjectHideFlags: 0
