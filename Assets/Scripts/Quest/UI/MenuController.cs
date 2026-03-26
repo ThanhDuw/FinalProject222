@@ -44,7 +44,11 @@ private void Start()
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.J))
+        {
+            if (menuPanel != null && !menuPanel.activeSelf)
+                menuPanel.SetActive(true);
             questLogUI?.Toggle();
+        };
     }
 
 private void OnDestroy()

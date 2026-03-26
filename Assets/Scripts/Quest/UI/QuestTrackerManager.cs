@@ -136,6 +136,7 @@ public class QuestTrackerManager : MonoBehaviour
             latest = p;
         }
         if (latest != null) ShowQuest(latest);
+        else HidePanel();;
     }
     private void ShowQuest(QuestProgress progress)
     {

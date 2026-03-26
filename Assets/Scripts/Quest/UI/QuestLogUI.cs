@@ -5,11 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Full quest log screen — displays all quests grouped by state.
-///
-/// Auto-select priority when quest state changes:
-///   1. First Active quest
-///   2. Last Completed quest (most recently finished)
-///   3. Nothing — Inactive quests are never auto-selected
+/// Auto-select priority: 1. ReadyToTurnIn  2. Active  3. Nothing
 /// </summary>
 public class QuestLogUI : MonoBehaviour
 {
@@ -25,7 +21,7 @@ public class QuestLogUI : MonoBehaviour
     private bool      subscribed = false;
     private Coroutine waitForManagerCoroutine;
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -35,48 +31,22 @@ public class QuestLogUI : MonoBehaviour
 
     private void Start()
     {
-        TrySubscribe();
-    }
-
-    private void OnDestroy()
-    {
-        Unsubscribe();
-    }
-
-    // ── Subscribe helpers ─────────────────────────────────────────────────────
-
-    private void TrySubscribe()
-    {
-        if (subscribed) return;
-
         if (QuestManager.Instance != null)
         {
             QuestManager.Instance.OnQuestStarted   += OnQuestChanged;
             QuestManager.Instance.OnQuestCompleted += OnQuestChanged;
             QuestManager.Instance.OnQuestFailed    += OnQuestChanged;
             subscribed = true;
-            RefreshAll();
+            Invoke("InitialRefresh", 0f);
         }
         else
         {
             if (waitForManagerCoroutine == null)
-                waitForManagerCoroutine = StartCoroutine(WaitForManagerThenSubscribe());
+                waitForManagerCoroutine = StartCoroutine(WaitForManagerThenInit());
         }
     }
 
-    private IEnumerator WaitForManagerThenSubscribe()
-    {
-        int tries = 0;
-        while (QuestManager.Instance == null && tries < 60)
-        {
-            tries++;
-            yield return null;
-        }
-        waitForManagerCoroutine = null;
-        TrySubscribe();
-    }
-
-    private void Unsubscribe()
+    private void OnDestroy()
     {
         if (!subscribed) return;
         if (QuestManager.Instance != null)
@@ -88,108 +58,124 @@ public class QuestLogUI : MonoBehaviour
         subscribed = false;
     }
 
-    // ── Event callback ────────────────────────────────────────────────────────
+    // ── Subscribe helpers ──────────────────────────────────────────────────
+
+    private void InitialRefresh()
+    {
+        BuildDisplay();
+    }
+
+    private IEnumerator WaitForManagerThenInit()
+    {
+        int tries = 0;
+        while (QuestManager.Instance == null && tries < 60)
+        {
+            tries++;
+            yield return null;
+        }
+        waitForManagerCoroutine = null;
+        if (QuestManager.Instance != null)
+        {
+            QuestManager.Instance.OnQuestStarted   += OnQuestChanged;
+            QuestManager.Instance.OnQuestCompleted += OnQuestChanged;
+            QuestManager.Instance.OnQuestFailed    += OnQuestChanged;
+            subscribed = true;
+        }
+        BuildDisplay();
+    }
+
+    // ── Event callback ──────────────────────────────────────────────────
 
     private void OnQuestChanged(QuestData _)
     {
-        RefreshAll();
+        BuildDisplay();
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
+    // ── Public API ──────────────────────────────────────────────────────
 
     public void Open()
     {
-        if (questLogPanel != null)
-            questLogPanel.SetActive(true);
-        RefreshAll();
+        if (questLogPanel != null) questLogPanel.SetActive(true);
+        BuildDisplay();
     }
 
     public void Close()
     {
-        if (questLogPanel != null)
-            questLogPanel.SetActive(false);
+        if (questLogPanel != null) questLogPanel.SetActive(false);
     }
 
     public void Toggle()
     {
         if (questLogPanel == null) return;
         questLogPanel.SetActive(!questLogPanel.activeSelf);
-        if (questLogPanel.activeSelf) RefreshAll();
+        if (questLogPanel.activeSelf) BuildDisplay();
     }
 
-    // ── Core display ──────────────────────────────────────────────────────────
+    // ── Core display ──────────────────────────────────────────────────────
 
-    private void RefreshAll()
+    private void BuildDisplay()
     {
         if (QuestManager.Instance == null) return;
 
         var all = new List<QuestData>();
+        all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.ReadyToTurnIn));
         all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.Active));
         all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.Inactive));
-        all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.Completed));
-        all.AddRange(QuestManager.Instance.GetQuestsByState(QuestState.Failed));
 
         PopulateList(all);
+        AutoSelectEntry(all);
+    }
 
-        // ── Auto-select priority ──────────────────────────────────────────────
-        // 1. First Active quest
-        // 2. Last Completed quest (keep overwriting to get the most recent one)
-        // 3. Nothing — never auto-select Inactive quests the player hasn't accepted
-        QuestData autoSelect = null;
+    private void AutoSelectEntry(List<QuestData> all)
+    {
+        QuestData pick = null;
 
+        // Priority 1: ReadyToTurnIn
         foreach (var q in all)
         {
-            if (QuestManager.Instance.GetQuestState(q.questID) == QuestState.Active)
-            {
-                autoSelect = q;
-                break;
-            }
+            if (QuestManager.Instance.GetQuestState(q.questID) == QuestState.ReadyToTurnIn)
+            { pick = q; break; }
         }
 
-        if (autoSelect == null)
+        // Priority 2: Active
+        if (pick == null)
         {
             foreach (var q in all)
             {
-                if (QuestManager.Instance.GetQuestState(q.questID) == QuestState.Completed)
-                    autoSelect = q;
+                if (QuestManager.Instance.GetQuestState(q.questID) == QuestState.Active)
+                { pick = q; break; }
             }
         }
 
-        if (autoSelect != null)
-            ShowQuestDetail(autoSelect);
+        if (pick != null) ShowQuestDetail(pick);
     }
 
     private void PopulateList(List<QuestData> quests)
     {
         if (questListContainer == null) return;
-
         for (int i = questListContainer.childCount - 1; i >= 0; i--)
             Destroy(questListContainer.GetChild(i).gameObject);
-
         if (quests == null) return;
 
         var fallbackFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         var stateColors = new Dictionary<QuestState, Color>
         {
-            { QuestState.Active,    new Color(0.4f,  0.85f, 0.4f)  },
-            { QuestState.Completed, new Color(0.55f, 0.55f, 0.9f)  },
-            { QuestState.Failed,    new Color(0.9f,  0.35f, 0.35f) },
-            { QuestState.Inactive,  new Color(0.6f,  0.6f,  0.6f)  },
+            { QuestState.ReadyToTurnIn, new Color(1.0f, 0.75f, 0.2f) },
+            { QuestState.Active,        new Color(0.4f, 0.85f, 0.4f) },
+            { QuestState.Inactive,      new Color(0.6f, 0.6f,  0.6f) },
         };
 
         var stateLabels = new Dictionary<QuestState, string>
         {
-            { QuestState.Active,    "Active" },
-            { QuestState.Completed, "Done"   },
-            { QuestState.Failed,    "Failed" },
-            { QuestState.Inactive,  ""       },
+            { QuestState.ReadyToTurnIn, "Ready!" },
+            { QuestState.Active,        "Active" },
+            { QuestState.Inactive,      ""       },
         };
 
         foreach (var q in quests)
         {
             if (q == null) continue;
-
             var state = QuestManager.Instance != null
                 ? QuestManager.Instance.GetQuestState(q.questID)
                 : QuestState.Inactive;
@@ -228,24 +214,24 @@ public class QuestLogUI : MonoBehaviour
             }
             else
             {
-                entry = new GameObject("QuestEntry");
-                entry.transform.SetParent(questListContainer, false);
+                var go              = new GameObject("QuestEntry");
+                go.transform.SetParent(questListContainer, false);
 
-                var entryRect      = entry.AddComponent<RectTransform>();
+                var entryRect       = go.AddComponent<RectTransform>();
                 entryRect.sizeDelta = new Vector2(0f, 36f);
 
-                var le             = entry.AddComponent<LayoutElement>();
-                le.preferredHeight = 36f;
-                le.flexibleWidth   = 1f;
+                var le              = go.AddComponent<LayoutElement>();
+                le.preferredHeight  = 36f;
+                le.flexibleWidth    = 1f;
 
-                var img  = entry.AddComponent<Image>();
+                var img   = go.AddComponent<Image>();
                 img.color = new Color(0.12f, 0.12f, 0.18f, 0.9f);
 
-                var btn  = entry.AddComponent<Button>();
+                var btn           = go.AddComponent<Button>();
                 btn.targetGraphic = img;
 
-                var labelGO  = new GameObject("QuestNameLabel");
-                labelGO.transform.SetParent(entry.transform, false);
+                var labelGO = new GameObject("QuestNameLabel");
+                labelGO.transform.SetParent(go.transform, false);
 
                 var labelRect       = labelGO.AddComponent<RectTransform>();
                 labelRect.anchorMin = Vector2.zero;
@@ -253,13 +239,15 @@ public class QuestLogUI : MonoBehaviour
                 labelRect.offsetMin = new Vector2(26f, 0f);
                 labelRect.offsetMax = Vector2.zero;
 
-                var txt            = labelGO.AddComponent<Text>();
-                txt.font           = fallbackFont;
-                txt.fontSize       = 14;
-                txt.color          = Color.white;
-                txt.alignment      = TextAnchor.MiddleLeft;
-                txt.raycastTarget  = false;
-                txt.text           = q.questName;
+                var txt           = labelGO.AddComponent<Text>();
+                txt.font          = fallbackFont;
+                txt.fontSize      = 14;
+                txt.color         = Color.white;
+                txt.alignment     = TextAnchor.MiddleLeft;
+                txt.raycastTarget = false;
+                txt.text          = q.questName;
+
+                entry = go;
             }
 
             var button = entry.GetComponentInChildren<Button>();
@@ -274,27 +262,18 @@ public class QuestLogUI : MonoBehaviour
     private void ShowQuestDetail(QuestData quest)
     {
         if (quest == null) return;
-
-        if (detailTitle != null)
-            detailTitle.text = quest.questName;
-
-        if (detailDescription != null)
-            detailDescription.text = quest.description;
-
-        if (requestText != null)
-            requestText.text = BuildRequestText(quest);
-
-        if (rewardText != null)
-            rewardText.text = BuildRewardText(quest);
+        if (detailTitle != null)       detailTitle.text       = quest.questName;
+        if (detailDescription != null) detailDescription.text = quest.description;
+        if (requestText != null)       requestText.text       = MakeObjectivesText(quest);
+        if (rewardText != null)        rewardText.text        = MakeRewardsText(quest);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private string BuildRequestText(QuestData quest)
+    private string MakeObjectivesText(QuestData quest)
     {
         if (quest.objectives == null || quest.objectives.Count == 0)
             return "No objectives.";
-
         var sb = new System.Text.StringBuilder();
         for (int i = 0; i < quest.objectives.Count; i++)
         {
@@ -305,11 +284,9 @@ public class QuestLogUI : MonoBehaviour
         return sb.ToString();
     }
 
-    private string BuildRewardText(QuestData quest)
+    private string MakeRewardsText(QuestData quest)
     {
-        if (quest.goldReward == 0 && quest.experienceReward == 0)
-            return "No rewards.";
-
+        if (quest.goldReward == 0 && quest.experienceReward == 0) return "No rewards.";
         var parts = new List<string>();
         if (quest.goldReward       > 0) parts.Add(quest.goldReward       + " Gold");
         if (quest.experienceReward > 0) parts.Add(quest.experienceReward + " XP");

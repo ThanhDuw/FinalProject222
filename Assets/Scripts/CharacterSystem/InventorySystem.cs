@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace CreatorKitCode 
 {
@@ -33,7 +33,7 @@ namespace CreatorKitCode
         /// stack counter there instead of using another slot.
         /// </summary>
         /// <param name="item">The item to add to the inventory</param>
-        public void AddItem(Item item)
+public void AddItem(Item item)
         {
             bool found = false;
             int firstEmpty = -1;
@@ -48,16 +48,23 @@ namespace CreatorKitCode
                 {
                     Entries[i].Count += 1;
                     found = true;
+                    break; // item already stacked — no need to keep scanning
                 }
             }
 
-            if (!found && firstEmpty != -1)
+            if (!found)
             {
-                InventoryEntry entry = new InventoryEntry();
-                entry.Item = item;
-                entry.Count = 1;
-
-                Entries[firstEmpty] = entry;
+                if (firstEmpty != -1)
+                {
+                    InventoryEntry entry = new InventoryEntry();
+                    entry.Item = item;
+                    entry.Count = 1;
+                    Entries[firstEmpty] = entry;
+                }
+                else
+                {
+                    Debug.LogWarning($"[InventorySystem] AddItem failed: inventory is full (32/32). Item '{item?.name}' could not be added.");
+                }
             }
         }
 

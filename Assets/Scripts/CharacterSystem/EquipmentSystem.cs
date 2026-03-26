@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -115,7 +115,7 @@ namespace CreatorKitCode
         /// </summary>
         /// <param name="slot"></param>
         /// <param name="isReplacement"></param>
-        public void Unequip(EquipmentItem.EquipmentSlot slot, bool isReplacement = false)
+public void Unequip(EquipmentItem.EquipmentSlot slot, bool isReplacement = false)
         {
             switch (slot)
             {
@@ -165,20 +165,20 @@ namespace CreatorKitCode
                     }
                     break;
                 case (EquipmentItem.EquipmentSlot)666:
-                    if (Weapon != null && 
-                        (Weapon != m_DefaultWeapon || isReplacement)) // the only way to unequip the default weapon is through replacing it
+                    if (Weapon != null &&
+                        (Weapon != m_DefaultWeapon || isReplacement))
                     {
                         Weapon.UnequippedBy(m_Owner);
-                    
-                        //the default weapon does not go back to the inventory
-                        if(Weapon != m_DefaultWeapon)
-                            m_Owner.Inventory.AddItem(Weapon);
-                    
+
+                        // Always return old weapon to inventory when being replaced,
+                        // including the default weapon — so the player never loses an item.
+                        m_Owner.Inventory.AddItem(Weapon);
+
                         OnUnequip?.Invoke(Weapon);
                         Weapon = null;
-                    
-                        //reequip the default weapon if this is not an unequip to equip a new one
-                        if(!isReplacement)
+
+                        // Re-equip the default weapon only when unequipping without a replacement
+                        if (!isReplacement)
                             Equip(m_DefaultWeapon);
                     }
                     break;
