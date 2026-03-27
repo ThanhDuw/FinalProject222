@@ -9,6 +9,8 @@ public class SaveSystem : MonoBehaviour
     private const string InventorySaveKey = "InventorySaveData";
     private const string EquipmentSaveKey = "EquipmentSaveData";
     private const string HealthSaveKey    = "PlayerHealthData";
+    private const string SceneSaveKey     = "PlayerSceneData";
+    private const string MetadataSaveKey  = "SaveMetadata";
 
     // -- Quest ----------------------------------------------------------------
 
@@ -148,7 +150,83 @@ public class SaveSystem : MonoBehaviour
         ClearInventoryData();
         ClearEquipmentData();
         ClearHealthData();
+        ClearSceneData();
+        ClearMetadata();
     }
+    // -- Scene ---------------------------------------------------------------
+
+    /// <summary>Saves the destination scene index and spawn point ID before scene load.</summary>
+    public void SaveSceneData(int sceneIndex, string spawnPointID)
+    {
+        var model = new SceneSaveModel { currentSceneIndex = sceneIndex, spawnPointID = spawnPointID ?? "" };
+        var json  = JsonUtility.ToJson(model);
+        PlayerPrefs.SetString(SceneSaveKey, json);
+        PlayerPrefs.Save();
+        Debug.Log($"[SaveSystem] Scene saved: index={sceneIndex}, spawn='{spawnPointID}'");
+    }
+
+    /// <summary>Returns saved scene data, or null if none exists.</summary>
+    public SceneSaveModel LoadSceneData()
+    {
+        if (!PlayerPrefs.HasKey(SceneSaveKey)) return null;
+        var json = PlayerPrefs.GetString(SceneSaveKey);
+        if (string.IsNullOrEmpty(json)) return null;
+        try { return JsonUtility.FromJson<SceneSaveModel>(json); }
+        catch (Exception e) { Debug.LogWarning("[SaveSystem] Load scene failed: " + e.Message); return null; }
+    }
+
+    public void ClearSceneData() { PlayerPrefs.DeleteKey(SceneSaveKey); PlayerPrefs.Save(); }
+
+    // -- Metadata -------------------------------------------------------------
+
+    /// <summary>Writes a timestamp and save version to PlayerPrefs.</summary>
+    public void SaveMetadataEntry()
+    {
+        var model = new SaveMetadata
+        {
+            timestamp   = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            saveVersion = 1
+        };
+        PlayerPrefs.SetString(MetadataSaveKey, JsonUtility.ToJson(model));
+        PlayerPrefs.Save();
+    }
+
+    /// <summary>Returns save metadata, or null if none exists.</summary>
+    public SaveMetadata LoadMetadata()
+    {
+        if (!PlayerPrefs.HasKey(MetadataSaveKey)) return null;
+        var json = PlayerPrefs.GetString(MetadataSaveKey);
+        if (string.IsNullOrEmpty(json)) return null;
+        try { return JsonUtility.FromJson<SaveMetadata>(json); }
+        catch (Exception e) { Debug.LogWarning("[SaveSystem] Load metadata failed: " + e.Message); return null; }
+    }
+
+    public void ClearMetadata() { PlayerPrefs.DeleteKey(MetadataSaveKey); PlayerPrefs.Save(); }
+
+    // -- Static helpers -------------------------------------------------------
+
+    /// <summary>
+    /// Returns true if a valid save exists.
+    /// Static so MainMenuController can call it without a MonoBehaviour instance.
+    /// </summary>
+    public static bool HasSaveData() => PlayerPrefs.HasKey("PlayerSceneData");
+
+    /// <summary>
+    /// Wipes every save key. Called by MainMenuController for New Game.
+    /// Static so it can be called without a MonoBehaviour instance.
+    /// </summary>
+    public static void ClearAllData()
+    {
+        PlayerPrefs.DeleteKey("QuestSaveData");
+        PlayerPrefs.DeleteKey("InventorySaveData");
+        PlayerPrefs.DeleteKey("EquipmentSaveData");
+        PlayerPrefs.DeleteKey("PlayerHealthData");
+        PlayerPrefs.DeleteKey("PlayerSceneData");
+        PlayerPrefs.DeleteKey("SaveMetadata");
+        PlayerPrefs.Save();
+        Debug.Log("[SaveSystem] All save data cleared.");
+    }
+
 
     // -- Models ---------------------------------------------------------------
 
@@ -158,4 +236,6 @@ public class SaveSystem : MonoBehaviour
     [Serializable] public class InventorySaveModel { public string itemName; public int count; }
     [Serializable] public class InventoryWrapper { public List<InventorySaveModel> items; }
     [Serializable] public class EquipmentSaveModel { public string weaponName; public string headName; public string torsoName; public string legsName; public string feetName; public string accessoryName; }
+    [Serializable] public class SceneSaveModel { public int currentSceneIndex; public string spawnPointID; }
+    [Serializable] public class SaveMetadata   { public string timestamp; public int saveVersion; }
 }
