@@ -15,6 +15,9 @@ public class TravelManager : MonoBehaviour
     private bool   _isTraveling;
     private const string PlayerTag = "Player";
 
+    /// <summary>Returns the current spawn point ID that the player is at or will spawn at after travel.</summary>
+    public string CurrentSpawnPointID => _pendingSpawnPointID ?? "";
+
     // -- Lifecycle ------------------------------------------------------------
 
     private void Awake()
@@ -29,9 +32,6 @@ public class TravelManager : MonoBehaviour
 
     // -- Public API -----------------------------------------------------------
 
-    /// <summary>
-    /// Initiates travel to the destination.
-    /// </summary>
     /// <summary>
     /// Called by MainMenuController to start the game from the Main Menu.
     /// Sets _isTraveling = true so OnSceneLoaded() does not early-return,
@@ -78,6 +78,8 @@ public class TravelManager : MonoBehaviour
         SaveInventory(player, saveSystem);
         SaveEquipment(player, saveSystem);
         SaveHealth(player, saveSystem);
+        saveSystem.SaveSceneData(destination.BuildIndex, destination.SpawnPointID);
+        saveSystem.SaveMetadataEntry();
 
         GameEvents.RaisePlayerTraveled(destination.DestinationName);
         Debug.Log($"[TravelManager] Traveling to '{destination.DestinationName}' (Build Index: {destination.BuildIndex})");
@@ -93,8 +95,15 @@ public class TravelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Called by MainMenuController to load the first game scene.
-    
+    /// Public wrapper to save quest data. Called by MenuController when user clicks Save button.
+    /// Finds SaveSystem and QuestTracker in current scene and delegates to private SaveQuestData.
+    /// </summary>
+    public void SaveCurrentQuestData()
+    {
+        SaveSystem   saveSystem   = FindFirstObjectByType<SaveSystem>();
+        QuestTracker questTracker = FindFirstObjectByType<QuestTracker>();
+        SaveQuestData(saveSystem, questTracker);
+    }
 
     // -- Scene Loaded ---------------------------------------------------------
 
@@ -172,6 +181,14 @@ public class TravelManager : MonoBehaviour
         saveSystem.SaveEquipmentData(cd.Equipment);
     }
 
+    private void SaveHealth(GameObject player, SaveSystem saveSystem)
+    {
+        if (player == null || saveSystem == null) return;
+        var cd = player.GetComponentInChildren<CharacterData>();
+        if (cd == null) return;
+        saveSystem.SaveHealthData(cd);
+    }
+
     // -- Restore Helpers ------------------------------------------------------
 
     private void RestoreInventory(GameObject player, SaveSystem saveSystem)
@@ -219,6 +236,20 @@ public class TravelManager : MonoBehaviour
         if (item != null) cd.Equipment.Equip(item);
     }
 
+    private void RestoreHealth(GameObject player, SaveSystem saveSystem)
+    {
+        if (saveSystem == null) return;
+        float pct = saveSystem.LoadHealthData();
+        if (pct < 0f) return;
+        var cd = player.GetComponentInChildren<CharacterData>();
+        if (cd == null) return;
+        // Apply as delta on top of the current (Init-set) health
+        int targetHp = Mathf.RoundToInt(pct * cd.Stats.stats.health);
+        int delta    = targetHp - cd.Stats.CurrentHealth;
+        if (delta != 0) cd.Stats.ChangeHealth(delta);
+        Debug.Log("[TravelManager] Health restored: " + cd.Stats.CurrentHealth + "/" + cd.Stats.stats.health);
+    }
+
     // -- Coroutine / State ----------------------------------------------------
 
     /// <summary>
@@ -243,32 +274,9 @@ public class TravelManager : MonoBehaviour
         Debug.Log("[TravelManager] Scene transition complete.");
     }
 
-    private void SaveHealth(GameObject player, SaveSystem saveSystem)
-    {
-        if (player == null || saveSystem == null) return;
-        var cd = player.GetComponentInChildren<CharacterData>();
-        if (cd == null) return;
-        saveSystem.SaveHealthData(cd);
-    }
-
-    private void RestoreHealth(GameObject player, SaveSystem saveSystem)
-    {
-        if (saveSystem == null) return;
-        float pct = saveSystem.LoadHealthData();
-        if (pct < 0f) return;
-        var cd = player.GetComponentInChildren<CharacterData>();
-        if (cd == null) return;
-        // Apply as delta on top of the current (Init-set) health
-        int targetHp = Mathf.RoundToInt(pct * cd.Stats.stats.health);
-        int delta    = targetHp - cd.Stats.CurrentHealth;
-        if (delta != 0) cd.Stats.ChangeHealth(delta);
-        Debug.Log("[TravelManager] Health restored: " + cd.Stats.CurrentHealth + "/" + cd.Stats.stats.health);
-    }
-
     private void ResetTravelState()
     {
         _isTraveling         = false;
         _pendingSpawnPointID = null;
     }
 }
-

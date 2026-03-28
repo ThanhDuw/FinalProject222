@@ -195,7 +195,12 @@ Claude must check this before creating scripts.
                          |           | scene transition, restores inventory +
                          |           | equipment after load, teleports player
                          |           | to SpawnPoint. Requires ItemRegistry ref.
-                         |           | Raises GameEvents.RaiseSceneTransitionComplete    | one frame after scene loads.
+    SaveSystem      | System     | Saves/loads quest + inventory + equipment +
+                  |            | health + scene + metadata via PlayerPrefs.
+                  |            | Keys: QuestSaveData, InventorySaveData,
+                  |            | EquipmentSaveData, PlayerHealthData,
+                  |            | PlayerSceneData (NEW), SaveMetadata (NEW).
+                  |            | Static: HasSaveData(), ClearAllData()sitionComplete    | one frame after scene loads.
   NPCTraveler            | Controller| Attached to Peasant NPC. Trigger detection,
                          |           | prompt blink (E key), opens/closes TravelMenuUI.
   TravelMenuUI           | UI        | Pre-wired buttons (no Instantiate at runtime).
@@ -579,7 +584,7 @@ Systems COMPLETE and stable:
   NPC Dialog System  [NPCQuestDialog with prerequisite gating]
 
 Systems that may need expansion:
-  Save System        [PlayerPrefs-based -- handles quest + inventory + equipment]t]]
+  Save System        Steps 1-4 complete. Steps 5-8 pending.ing.]]]]
   Inventory / Equipment UI
   Audio wiring per scene (BGM / SFX)
 
@@ -725,6 +730,51 @@ Minor notes:
                | Quest_01 -> MetalAxe.asset                          |
                | Quest_02 -> WarriorHelmet.asset                     |
                | Quest_03 -> LegendaryRake.asset                     ||(). |es updated  |
+2026-03-27   | Planned Save/Load System for game progress          | Moon
+               | Audit confirmed: SaveSystem was scene-transition     |
+               | bridge only. Extended to full game-progress save.   |
+               | Step 1 (Audit): Confirmed 4 existing keys valid.    |
+               |   Added 2 new keys: PlayerSceneData, SaveMetadata.  |
+               | Step 2 (Models): Added SceneSaveModel,              |
+               |   SaveMetadata classes to SaveSystem.cs.            |
+               | Step 3 (Methods): Added SaveSceneData/LoadSceneData,|
+               |   SaveMetadataEntry/LoadMetadata, HasSaveData()     |
+               |   static, ClearAllData() static, ClearSceneData,   |
+               |   ClearMetadata. Updated ClearAllSaveData() to      |
+               |   include all 6 keys. No existing code changed.     |
+   | Step 4 (SaveAll): Added SaveAll(CharacterData, sceneIndex,  |
+               |   spawnPointID) to SaveSystem.cs. Updated TravelTo() in  |
+               |   TravelManager to call SaveSceneData + SaveMetadataEntry |
+               |   after existing saves. No existing save logic changed.   |
+               | Steps 5-8 pending: Manual Save, New Game flow,           |
+               |   Continue button, Testing.                               | button.      |
+2026-03-27   | SAVE/LOAD SYSTEM PLAN -- full game progress save    | Moon
+               | Scope confirmed: scene index + spawnPoint (new),   |
+               | quest/inventory/equipment/health (existing).        |
+               | Architecture decision: extend SaveSystem.cs only,  |
+               | no new scripts, PlayerPrefs + JSON retained.        |
+               | Plan broken into 8 steps:                           |
+               |   Step 1 (DONE) -- Audit & scope definition         |
+               |   Step 2 (DONE) -- Added SceneSaveModel,           |
+               |     SaveMetadata models + SceneSaveKey,            |
+               |     MetadataSaveKey constants to SaveSystem.cs      |
+               |   Step 3 (DONE) -- Added SaveSceneData(),          |
+               |     LoadSceneData(), ClearSceneData(),             |
+               |     SaveMetadataEntry(), LoadMetadata(),           |
+               |     ClearMetadata(), HasSaveData() (static),       |
+               |     ClearAllData() (static) to SaveSystem.cs.      |
+               |     Updated ClearAllSaveData() to include          |
+               |     ClearSceneData() + ClearMetadata().            |
+               |   Step 4 (PENDING) -- SaveAll() wrapper +          |
+               |     TravelManager saves scene before LoadScene()   |
+               |   Step 5 (PENDING) -- Manual Save trigger          |
+               |     (Pause Menu -- can be deferred)                |
+               |   Step 6 (PENDING) -- New Game: ClearAllData()     |
+               |     before TravelFromMainMenu()                    |
+               |   Step 7 (PENDING) -- Continue button:             |
+               |     HasSaveData() check + LoadSceneData() +        |
+               |     TravelFromMainMenu(savedScene)                 |
+               |   Step 8 (PENDING) -- Testing & edge cases         |
 
 ---
 

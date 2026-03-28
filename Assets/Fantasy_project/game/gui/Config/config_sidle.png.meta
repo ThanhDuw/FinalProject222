@@ -171,7 +171,7 @@ TextureImporter:
         width: 228
         height: 81
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -206,6 +206,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: config_sidle_5
+      rect:
+        serializedVersion: 2
+        x: 117
+        y: 628
+        width: 224
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6b3d4e233f263884d9a8bd711ee12dad
+      internalID: 832759557
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -225,6 +247,7 @@ TextureImporter:
       config_sidle_2: -175485954
       config_sidle_3: -1644174267
       config_sidle_4: -1719066987
+      config_sidle_5: 832759557
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

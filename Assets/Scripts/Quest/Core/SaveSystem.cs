@@ -228,6 +228,27 @@ public class SaveSystem : MonoBehaviour
     }
 
 
+    // -- Convenience wrapper --------------------------------------------------
+
+    /// <summary>
+    /// Saves inventory, equipment, health, scene, and metadata in one call.
+    /// Quest data is excluded -- it requires QuestManager/QuestTracker context
+    /// and is saved separately by TravelManager.SaveQuestData().
+    /// Intended for pause menu / manual save triggers.
+    /// </summary>
+    public void SaveAll(CharacterData characterData, int sceneIndex, string spawnPointID)
+    {
+        if (characterData != null)
+        {
+            SaveInventoryData(characterData.Inventory);
+            SaveEquipmentData(characterData.Equipment);
+            SaveHealthData(characterData);
+        }
+        SaveSceneData(sceneIndex, spawnPointID);
+        SaveMetadataEntry();
+        Debug.Log("[SaveSystem] SaveAll complete.");
+    }
+
     // -- Models ---------------------------------------------------------------
 
     [Serializable] public class QuestSaveModel { public string questID; public QuestState state; public List<ObjectiveSaveModel> objectives; }
