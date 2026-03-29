@@ -105,6 +105,60 @@ public class TravelManager : MonoBehaviour
         SaveQuestData(saveSystem, questTracker);
     }
 
+    /// <summary>
+    /// Step 7: Load saved game from Main Menu.
+    /// Reads saved scene index and spawn point from SaveSystem,
+    /// then loads that scene and triggers restore flow via OnSceneLoaded.
+    /// </summary>
+    public void LoadSavedGame()
+    {
+        if (_isTraveling)
+        {
+            Debug.LogWarning("[TravelManager] Already traveling.");
+            return;
+        }
+
+        // Load scene data from SaveSystem (static method, no scene instance needed)
+        SaveSystem saveSystemTemp = FindFirstObjectByType<SaveSystem>();
+        if (saveSystemTemp == null)
+        {
+            Debug.LogError("[TravelManager] SaveSystem not found. Cannot load scene data.");
+            return;
+        }
+
+        SaveSystem.SceneSaveModel sceneData = saveSystemTemp.LoadSceneData();
+        
+        if (sceneData == null)
+        {
+            Debug.LogError("[TravelManager] No saved scene data found. Cannot load game.");
+            return;
+        }
+
+        // Validate scene index
+        if (sceneData.currentSceneIndex < 0 || sceneData.currentSceneIndex >= SceneManager.sceneCountInBuildSettings)
+        {
+            Debug.LogError($"[TravelManager] Invalid scene index {sceneData.currentSceneIndex} in save data.");
+            return;
+        }
+
+        // Set travel state
+        _pendingSpawnPointID = sceneData.spawnPointID;
+        _isTraveling = true;
+
+        Debug.Log($"[TravelManager] Loading saved game: Scene {sceneData.currentSceneIndex}, Spawn '{sceneData.spawnPointID}'");
+
+        // Load scene (OnSceneLoaded will handle restore)
+        if (_transitionUI != null)
+        {
+            int sceneIndex = sceneData.currentSceneIndex;
+            _transitionUI.FadeOut(() => SceneManager.LoadScene(sceneIndex));
+        }
+        else
+        {
+            SceneManager.LoadScene(sceneData.currentSceneIndex);
+        }
+    }
+
     // -- Scene Loaded ---------------------------------------------------------
 
     /// <summary>

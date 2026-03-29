@@ -33,8 +33,7 @@ public class MainMenuController : MonoBehaviour
 
     // ── Scene ─────────────────────────────────────────────────────────────────
     [Header("Scene")]
-    [SerializeField] private string             gameSceneName  = "Western Village";
-    
+    [SerializeField] private string gameSceneName = "Western Village";
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -52,11 +51,10 @@ public class MainMenuController : MonoBehaviour
     private void Start()
     {
         SetPanel(optionsPanel, false);
-        SetPanel(helpPanel,    false);
+        SetPanel(helpPanel, false);
 
         // Fade in when MainMenu first opens
         SceneTransitionUI.Instance?.FadeIn();
-        
     }
 
     private void OnDestroy()
@@ -72,18 +70,41 @@ public class MainMenuController : MonoBehaviour
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Called when Start button is clicked.
+    /// Step 6: Clears all save data before starting a fresh new game.
+    /// </summary>
     public void OnStartPressed()
     {
+        // Clear all save data to ensure fresh start
+        SaveSystem.ClearAllData();
+        Debug.Log("[MainMenuController] New Game - all save data cleared.");
         LoadScene(gameSceneName);
     }
 
+    /// <summary>
+    /// Called when Continue/Load button is clicked.
+    /// Step 7: Loads saved game if available, otherwise starts new game.
+    /// </summary>
     public void OnLoadPressed()
     {
         if (HasSaveData())
-            LoadScene(gameSceneName);
+        {
+            // Load saved game via TravelManager
+            if (TravelManager.Instance != null)
+            {
+                TravelManager.Instance.LoadSavedGame();
+                Debug.Log("[MainMenuController] Loading saved game...");
+            }
+            else
+            {
+                Debug.LogError("[MainMenuController] TravelManager not found. Cannot load game.");
+            }
+        }
         else
         {
-            Debug.Log("[MainMenuController] No save data — starting new game.");
+            Debug.LogWarning("[MainMenuController] No save data found - starting new game instead.");
+            SaveSystem.ClearAllData();
             LoadScene(gameSceneName);
         }
     }
@@ -143,7 +164,7 @@ public class MainMenuController : MonoBehaviour
 
     private bool HasSaveData()
     {
-        string path = System.IO.Path.Combine(Application.persistentDataPath, "save.dat");
-        return System.IO.File.Exists(path);
+        // Use SaveSystem's static method to check for saved game data
+        return SaveSystem.HasSaveData();
     }
 }
