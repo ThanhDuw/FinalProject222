@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1217747735461502804}
   - component: {fileID: 1442599729692050559}
   - component: {fileID: -8624524323416752996}
+  - component: {fileID: 2210202581874751455}
   m_Layer: 11
   m_Name: Skeleton
   m_TagString: Enemy
@@ -143,6 +144,18 @@ MonoBehaviour:
   DeathClips:
   - {fileID: 8300000, guid: b3d7260cb4afa094f856d291fdbfc990, type: 3}
   UseType: 0
+--- !u!114 &2210202581874751455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1534584598814331549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3a1cec6976269a4da3948bf1770e395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyPoolTracker
 --- !u!1001 &3762947280351728635
 PrefabInstance:
   m_ObjectHideFlags: 0

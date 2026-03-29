@@ -26,6 +26,9 @@ namespace CreatorKitCodeInternal {
 
         [Header("Camera")]
         [SerializeField] private float cameraRotateSpeed = 180f; // degrees per second when holding RMB
+
+        [Header("Movement")]
+        [SerializeField] private float rotationSpeed = 15f; // Slerp interpolation speed for character facing
     
         Animator m_Animator;
         CharacterController m_CharacterController;   // MOVEMENT REFACTOR: CharacterController-based movement
@@ -177,8 +180,9 @@ namespace CreatorKitCodeInternal {
             }
         
             // MOVEMENT REFACTOR: WASD-based movement using CharacterController.
-            float h = Input.GetAxisRaw("Horizontal");
-            float v = Input.GetAxisRaw("Vertical");
+            Vector2 moveInput = GameInput.Instance.MoveInput;
+            float h = moveInput.x;
+            float v = moveInput.y;
 
             // Camera-relative movement for top-down control
             Vector3 camForward = m_MainCamera.transform.forward;
@@ -193,10 +197,11 @@ namespace CreatorKitCodeInternal {
             // Avoid allocating a new Vector2 just to check if there's input
             float inputMag = (Mathf.Abs(h) > 0.001f || Mathf.Abs(v) > 0.001f) ? 1f : 0f;
 
-            // Rotate character to face movement direction
+            // Smoothly rotate character to face movement direction
             if (moveDir.sqrMagnitude > 0.001f)
             {
-                m_Transform.forward = moveDir;
+                Quaternion targetRotation = Quaternion.LookRotation(moveDir);
+                m_Transform.rotation = Quaternion.Slerp(m_Transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
             }
 
             // Apply movement via CharacterController (no NavMeshAgent click-to-move)
@@ -209,7 +214,7 @@ namespace CreatorKitCodeInternal {
                 m_CharacterController.Move(moveVelocity);
             }
 
-            float mouseWheel = Input.GetAxis("Mouse ScrollWheel");
+            float mouseWheel = GameInput.Instance.ScrollValue;
             if (!Mathf.Approximately(mouseWheel, 0.0f))
             {
                 Vector3 view = m_MainCamera.ScreenToViewportPoint(Input.mousePosition);
@@ -218,12 +223,12 @@ namespace CreatorKitCodeInternal {
             }
         
             // New: rotate camera around player while holding right mouse button
-            if (Input.GetMouseButton(1))
+            if (GameInput.Instance.CameraRotateHeld)
             {
                 Vector3 view = m_MainCamera.ScreenToViewportPoint(Input.mousePosition);
                 if (view.x > 0f && view.x < 1f && view.y > 0f && view.y < 1f)
                 {
-                    float mouseX = Input.GetAxis("Mouse X");
+                    float mouseX = GameInput.Instance.CameraRotateDelta;
                     if (!Mathf.Approximately(mouseX, 0f) && CameraController.Instance != null)
                     {
                         // Rotate the camera GameObject around the player's Y axis (yaw) based on mouse movement.
@@ -237,7 +242,7 @@ namespace CreatorKitCodeInternal {
 
             // COMBAT INPUT: Delegate attack to CombatController.
             // Replaced: space key attack -> click-to-attack on left mouse button.
-            if (Input.GetMouseButtonDown(0) && m_CombatController != null)
+            if (GameInput.Instance.AttackPressed && m_CombatController != null)
             {
                 // Ignore clicks when over UI
                 if (!EventSystem.current || !EventSystem.current.IsPointerOverGameObject())
@@ -259,7 +264,7 @@ namespace CreatorKitCodeInternal {
             }
         
             //Keyboard shortcuts
-            if(Input.GetKeyUp(KeyCode.B))
+            if(GameInput.Instance.InventoryPressed)
                 UISystem.Instance.ToggleInventory();
         }
 

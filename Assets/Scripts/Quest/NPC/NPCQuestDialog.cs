@@ -18,7 +18,6 @@ public class NPCQuestDialog : MonoBehaviour
 
     [Header("Interaction")]
     [SerializeField] private float   interactionRadius = 2f;
-    [SerializeField] private KeyCode interactKey       = KeyCode.E;
 
     [Header("UI References - drag from NPC Dialogue Manager")]
     [SerializeField] private GameObject dialoguePanel;
@@ -81,7 +80,7 @@ public class NPCQuestDialog : MonoBehaviour
             }
         }
         if (!isPlayerInRange) return;
-        if (Input.GetKeyDown(interactKey))
+        if (GameInput.Instance != null && GameInput.Instance.InteractPressed)
         {
             if (!isDialogueOpen) TryOpenDialog();
             else                 OnContinuePressed();

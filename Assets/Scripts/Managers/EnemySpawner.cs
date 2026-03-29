@@ -44,8 +44,12 @@ public class EnemySpawner : MonoBehaviour
         GameObject inst = PoolManager.Instance.Get(_enemyPrefab, spawnPos, Quaternion.identity);
         _alive.Add(inst);
 
-        EnemyPoolTracker tr = inst.GetComponent<EnemyPoolTracker>();
-        if (tr == null) tr  = inst.AddComponent<EnemyPoolTracker>();
+        // Prefab should already have EnemyPoolTracker pre-attached for best performance.
+        if (!inst.TryGetComponent<EnemyPoolTracker>(out var tr))
+        {
+            Debug.LogWarning($"[EnemySpawner] Prefab '{_enemyPrefab.name}' is missing EnemyPoolTracker! Add it to the prefab to avoid runtime AddComponent overhead.", _enemyPrefab);
+            tr = inst.AddComponent<EnemyPoolTracker>();
+        }
         tr.Init(this, inst);
     }
 

@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5667712714323555574}
   - component: {fileID: 5667712714323555573}
   - component: {fileID: 1514832715870360197}
+  - component: {fileID: 5521943066563614005}
   m_Layer: 11
   m_Name: CactusBossyEnemy
   m_TagString: Enemy
@@ -152,6 +153,18 @@ MonoBehaviour:
   - {fileID: 8300000, guid: ab415396b033067448e7d08899293927, type: 3}
   - {fileID: 8300000, guid: 6989802e6d350bd4882572e8d2f9f24c, type: 3}
   UseType: 1
+--- !u!114 &5521943066563614005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5667712714323555562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3a1cec6976269a4da3948bf1770e395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyPoolTracker
 --- !u!1001 &2865927052972858387
 PrefabInstance:
   m_ObjectHideFlags: 0

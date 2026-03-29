@@ -51,7 +51,7 @@ public class MenuController : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.J))
+        if (GameInput.Instance != null && GameInput.Instance.QuestLogPressed)
         {
             if (menuPanel != null && !menuPanel.activeSelf)
                 menuPanel.SetActive(true);

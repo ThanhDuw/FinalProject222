@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5667712714323555574}
   - component: {fileID: 5667712714323555573}
   - component: {fileID: 1514832715870360197}
+  - component: {fileID: 2429639106528534798}
   m_Layer: 11
   m_Name: CactusNailsEnemy
   m_TagString: Enemy
@@ -154,6 +155,18 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 2672e27cd06d1404eb0f211f0d838a5f, type: 3}
   - {fileID: 8300000, guid: 873d7f1ace050d347b3a7966bca26594, type: 3}
   UseType: 1
+--- !u!114 &2429639106528534798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5667712714323555562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3a1cec6976269a4da3948bf1770e395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyPoolTracker
 --- !u!1001 &5667712713484102679
 PrefabInstance:
   m_ObjectHideFlags: 0

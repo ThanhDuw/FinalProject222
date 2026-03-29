@@ -40,7 +40,6 @@ public class NPCTraveler : MonoBehaviour
 
     [Header("Interaction")]
     [SerializeField] private float   _interactionRadius = 2f;
-    [SerializeField] private KeyCode _interactKey       = KeyCode.E;
 
     [Header("Interact Prompt")]
     [Tooltip("Child world-space GameObject with an E label - shown and blinks when player is in range.")]
@@ -169,7 +168,7 @@ public class NPCTraveler : MonoBehaviour
     {
         if (!_isPlayerInRange) return;
 
-        if (Input.GetKeyDown(_interactKey))
+        if (GameInput.Instance != null && GameInput.Instance.InteractPressed)
         {
             if (!_isMenuOpen) OpenTravelMenu();
             else              CloseTravelMenu();
