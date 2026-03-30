@@ -180,6 +180,7 @@ namespace CreatorKitCodeInternal {
             }
         
             // MOVEMENT REFACTOR: WASD-based movement using CharacterController.
+            if (GameInput.Instance == null) return; // Guard: wait until GameInput is ready
             Vector2 moveInput = GameInput.Instance.MoveInput;
             float h = moveInput.x;
             float v = moveInput.y;

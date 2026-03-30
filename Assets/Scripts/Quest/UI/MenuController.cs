@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using CreatorKitCode;
 
@@ -23,6 +24,17 @@ public class MenuController : MonoBehaviour
     [SerializeField] private Button     questButton;
     [SerializeField] private QuestLogUI questLogUI;
 
+    [Header("Main Menu")]
+    [SerializeField] private Button     mainMenuButton;
+
+    [Header("Options Panel")]
+    [SerializeField] private Button     optionButton;
+    [SerializeField] private GameObject optionPanel;
+
+    [Header("Help Panel")]
+    [SerializeField] private Button     helpButton;
+    [SerializeField] private GameObject helpPanel;
+
     [Header("Save Game")]
     [SerializeField] private SaveSystem saveSystem;
     [SerializeField] private Button     saveButton;
@@ -36,9 +48,21 @@ public class MenuController : MonoBehaviour
         if (menuCloseButton != null)
             menuCloseButton.onClick.AddListener(CloseMenu);
 
+        // ── Main Menu ────────────────────────────────────────────────────────
+        if (mainMenuButton != null)
+            mainMenuButton.onClick.AddListener(ReturnToMainMenu);
+
         // ── Quest Log ─────────────────────────────────────────────────────────
         if (questButton != null && questLogUI != null)
             questButton.onClick.AddListener(questLogUI.Toggle);
+
+        // ── Options Panel ────────────────────────────────────────────────────
+        if (optionButton != null)
+            optionButton.onClick.AddListener(ToggleOptionPanel);
+
+        // ── Help Panel ───────────────────────────────────────────────────────
+        if (helpButton != null)
+            helpButton.onClick.AddListener(ToggleHelpPanel);
 
         // ── Save Game ─────────────────────────────────────────────────────────
         if (saveButton != null && saveSystem != null)
@@ -46,11 +70,20 @@ public class MenuController : MonoBehaviour
 
         // Start hidden
         questLogUI?.Close();
-        if (menuPanel != null) menuPanel.SetActive(false);
+        if (menuPanel   != null) menuPanel.SetActive(false);
+        if (optionPanel != null) optionPanel.SetActive(false);
+        if (helpPanel   != null) helpPanel.SetActive(false);
     }
 
     private void Update()
     {
+        // ── Esc key → toggle menu ────────────────────────────────────────────
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            ToggleMenu();
+        }
+
+        // ── Quest Log hotkey ─────────────────────────────────────────────────
         if (GameInput.Instance != null && GameInput.Instance.QuestLogPressed)
         {
             if (menuPanel != null && !menuPanel.activeSelf)
@@ -61,10 +94,13 @@ public class MenuController : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (menuOpenButton  != null) menuOpenButton.onClick.RemoveAllListeners();
-        if (menuCloseButton != null) menuCloseButton.onClick.RemoveAllListeners();
-        if (questButton     != null) questButton.onClick.RemoveAllListeners();
-        if (saveButton      != null) saveButton.onClick.RemoveAllListeners();
+        if (menuOpenButton  != null) menuOpenButton.onClick.RemoveListener(ToggleMenu);
+        if (menuCloseButton != null) menuCloseButton.onClick.RemoveListener(CloseMenu);
+        if (mainMenuButton  != null) mainMenuButton.onClick.RemoveListener(ReturnToMainMenu);
+        if (questButton     != null && questLogUI != null) questButton.onClick.RemoveListener(questLogUI.Toggle);
+        if (optionButton    != null) optionButton.onClick.RemoveListener(ToggleOptionPanel);
+        if (helpButton      != null) helpButton.onClick.RemoveListener(ToggleHelpPanel);
+        if (saveButton      != null) saveButton.onClick.RemoveListener(SaveGame);
     }
 
     // ── Called by whatever opens the pause/menu panel ────────────────────────
@@ -76,7 +112,27 @@ public class MenuController : MonoBehaviour
     public void CloseMenu()
     {
         questLogUI?.Close();
-        if (menuPanel != null) menuPanel.SetActive(false);
+        if (optionPanel != null) optionPanel.SetActive(false);
+        if (helpPanel   != null) helpPanel.SetActive(false);
+        if (menuPanel   != null) menuPanel.SetActive(false);
+    }
+
+    // ── Sub-panel toggles ────────────────────────────────────────────────
+
+    private void ToggleOptionPanel()
+    {
+        if (optionPanel == null) return;
+        optionPanel.SetActive(!optionPanel.activeSelf);
+        // Close other sub-panels
+        if (helpPanel != null && optionPanel.activeSelf) helpPanel.SetActive(false);
+    }
+
+    private void ToggleHelpPanel()
+    {
+        if (helpPanel == null) return;
+        helpPanel.SetActive(!helpPanel.activeSelf);
+        // Close other sub-panels
+        if (optionPanel != null && helpPanel.activeSelf) optionPanel.SetActive(false);
     }
 
     public void ToggleMenu()
@@ -84,6 +140,13 @@ public class MenuController : MonoBehaviour
         if (menuPanel == null) return;
         if (menuPanel.activeSelf) CloseMenu();
         else                      OpenMenu();
+    }
+
+    private void ReturnToMainMenu()
+    {
+        // Unpause if timescale was modified, then load scene 0 (MainMenu)
+        Time.timeScale = 1f;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(0);
     }
 
     // ── Save Game Logic ──────────────────────────────────────────────────────

@@ -1,20 +1,22 @@
 using UnityEngine;
 using UnityEngine.UI;
+using CreatorKitCodeInternal;
 
 /// <summary>
 /// AudioVolumeController — UI Controller (Options Panel)
 ///
-/// Connects Music_Slider and SFX_Slider to the actual AudioSources in the scene.
+/// Connects Music_Slider and VFX_Slider to the audio system.
 /// Persists volume settings across sessions via PlayerPrefs.
 ///
-/// Dependency flow (per CLAUDE.md):
-///   AudioVolumeController (UI) → AudioSource (MusicPlayer, SFX pool)
+/// Music Slider  → MusicPlayer AudioSource + AmbiencePlayer master volume
+/// VFX Slider    → SFXManager pool (via static SFXVolume property)
 ///
-/// Setup requirements:
-///   1. Assign musicSlider   → Music_Slider
-///   2. Assign sfxSlider     → SFX_Slider
-///   3. Assign musicSource   → MusicPlayer AudioSource (PlayerCore/Managers/MusicPlayer)
-///   4. Assign sfxSources    → all pooled SFX AudioSources (optional; volume applied on play)
+/// Setup:
+///   1. Attach to OptionPanel_UI
+///   2. musicSlider  → Music_Slider/Slider
+///   3. vfxSlider    → VFX_Slider/Slider
+///   4. musicSource  → MusicPlayer AudioSource (auto-find fallback)
+///   5. ambiencePlayer → AmbiencePlayer (auto-find fallback)
 /// </summary>
 public class AudioVolumeController : MonoBehaviour
 {
@@ -25,17 +27,17 @@ public class AudioVolumeController : MonoBehaviour
     // ── Inspector ─────────────────────────────────────────────────────────────
     [Header("Sliders")]
     [SerializeField] private Slider musicSlider;
-    [SerializeField] private Slider sfxSlider;
+    [SerializeField] private Slider vfxSlider;
 
     [Header("Audio Sources")]
     [Tooltip("Drag MusicPlayer AudioSource here (PlayerCore/Managers/MusicPlayer).")]
     [SerializeField] private AudioSource musicSource;
 
-    [Tooltip("Drag all pooled SFX AudioSources here. Leave empty to use FindObjectsByType fallback.")]
-    [SerializeField] private AudioSource[] sfxSources;
+    [Tooltip("Drag AmbiencePlayer here (PlayerCore/Managers/AmbiencePlayer).")]
+    [SerializeField] private AmbiencePlayer ambiencePlayer;
 
     // ── Cached SFX volume ─────────────────────────────────────────────────────
-    // Stored so SFXManager pool sources (spawned at runtime) can read it via static accessor.
+    // SFXManager.PlaySound reads this static property at play-time.
     private static float s_SFXVolume = 1f;
 
     /// <summary>Current SFX volume (0–1). Read by SFXManager when playing sounds.</summary>
@@ -43,14 +45,22 @@ public class AudioVolumeController : MonoBehaviour
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-private void Awake()
+    private void Awake()
     {
-        // If musicSource not assigned in Inspector, find it at runtime (gameplay scenes)
+        // Auto-find MusicPlayer if not assigned in Inspector
         if (musicSource == null)
         {
             var go = GameObject.Find("MusicPlayer");
             if (go != null)
                 musicSource = go.GetComponent<AudioSource>();
+        }
+
+        // Auto-find AmbiencePlayer if not assigned in Inspector
+        if (ambiencePlayer == null)
+        {
+            var go = GameObject.Find("AmbiencePlayer");
+            if (go != null)
+                ambiencePlayer = go.GetComponent<AmbiencePlayer>();
         }
 
         // Load persisted values, default to 1 if first run
@@ -67,11 +77,11 @@ private void Awake()
             musicSlider.value    = savedMusic;
         }
 
-        if (sfxSlider != null)
+        if (vfxSlider != null)
         {
-            sfxSlider.minValue = 0f;
-            sfxSlider.maxValue = 1f;
-            sfxSlider.value    = savedSFX;
+            vfxSlider.minValue = 0f;
+            vfxSlider.maxValue = 1f;
+            vfxSlider.value    = savedSFX;
         }
 
         // Apply loaded values immediately
@@ -82,13 +92,13 @@ private void Awake()
     private void OnEnable()
     {
         if (musicSlider != null) musicSlider.onValueChanged.AddListener(OnMusicChanged);
-        if (sfxSlider   != null) sfxSlider.onValueChanged.AddListener(OnSFXChanged);
+        if (vfxSlider   != null) vfxSlider.onValueChanged.AddListener(OnSFXChanged);
     }
 
     private void OnDisable()
     {
         if (musicSlider != null) musicSlider.onValueChanged.RemoveListener(OnMusicChanged);
-        if (sfxSlider   != null) sfxSlider.onValueChanged.RemoveListener(OnSFXChanged);
+        if (vfxSlider   != null) vfxSlider.onValueChanged.RemoveListener(OnSFXChanged);
     }
 
     // ── Slider callbacks ──────────────────────────────────────────────────────
@@ -113,17 +123,17 @@ private void Awake()
     {
         if (musicSource != null)
             musicSource.volume = value;
+
+        // Sync ambience volume with music slider
+        if (ambiencePlayer != null)
+            ambiencePlayer.SetMasterVolume(value);
     }
 
     private void ApplySFXVolume(float value)
     {
         s_SFXVolume = value;
-
-        // Apply to any explicitly assigned SFX sources
-        if (sfxSources != null)
-        {
-            foreach (var src in sfxSources)
-                if (src != null) src.volume = value;
-        }
+        // SFX pool sources read AudioVolumeController.SFXVolume at play-time
+        // via SFXManager.PlaySound — no explicit source assignment needed.
     }
 }
+
