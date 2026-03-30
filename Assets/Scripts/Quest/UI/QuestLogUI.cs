@@ -148,6 +148,7 @@ public class QuestLogUI : MonoBehaviour
         }
 
         if (pick != null) ShowQuestDetail(pick);
+        else             ClearDetails();
     }
 
     private void PopulateList(List<QuestData> quests)
@@ -266,6 +267,14 @@ public class QuestLogUI : MonoBehaviour
         if (detailDescription != null) detailDescription.text = quest.description;
         if (requestText != null)       requestText.text       = MakeObjectivesText(quest);
         if (rewardText != null)        rewardText.text        = MakeRewardsText(quest);
+    }
+
+    private void ClearDetails()
+    {
+        if (detailTitle != null)       detailTitle.text       = "";
+        if (detailDescription != null) detailDescription.text = "No active quest.";
+        if (requestText != null)       requestText.text       = "";
+        if (rewardText != null)        rewardText.text        = "";
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

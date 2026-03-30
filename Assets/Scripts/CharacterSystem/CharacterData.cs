@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using CreatorKitCodeInternal;
 using UnityEngine;
 
@@ -48,8 +48,12 @@ namespace CreatorKitCode
 
             if (StartingWeapon != null)
             {
-                StartingWeapon.UsedBy(this);
                 Equipment.InitWeapon(StartingWeapon, this);
+
+                if (!SaveSystem.HasSaveData())
+                {
+                    StartingWeapon.UsedBy(this);
+                }
             }
         }
 

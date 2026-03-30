@@ -38,17 +38,28 @@ public class QuestTrackerManager : MonoBehaviour
     private void DoSub(bool late)
     {
         if (_sub) return;
+        
+        // 1. Try to get QuestTracker from QuestManager (if it's a component there)
         if (questTracker == null && QuestManager.Instance != null)
             questTracker = QuestManager.Instance.GetComponent<QuestTracker>();
+
+        // 2. If not found, look for it globally in the scene
+        if (questTracker == null)
+            questTracker = FindFirstObjectByType<QuestTracker>();
+
         if (questTracker == null)
         {
             if (_waitCo == null) _waitCo = StartCoroutine(WaitAndSub());
             return;
         }
+
         questTracker.OnProgressUpdated      += OnProgress;
+        questTracker.OnQuestTrackingStarted += OnProgress; // Added: refresh when tracking starts
         questTracker.OnQuestTrackingStopped += OnStopped;
+        
         if (QuestManager.Instance != null)
             QuestManager.Instance.OnQuestStarted += OnStarted;
+            
         _sub = true;
         DoRefresh();
     }
@@ -58,6 +69,7 @@ public class QuestTrackerManager : MonoBehaviour
         if (questTracker != null)
         {
             questTracker.OnProgressUpdated      -= OnProgress;
+            questTracker.OnQuestTrackingStarted -= OnProgress;
             questTracker.OnQuestTrackingStopped -= OnStopped;
         }
         if (QuestManager.Instance != null)
@@ -95,11 +107,11 @@ public class QuestTrackerManager : MonoBehaviour
     }
     private void OnStopped(string questID)
     {
-        if (trackerPanel != null) trackerPanel.SetActive(false);
+        DoRefresh();
     }
     private void OnStarted(QuestData quest)
     {
-        if (trackerPanel != null) trackerPanel.SetActive(false);
+        DoRefresh();
     }
     public void TogglePanel()
     {

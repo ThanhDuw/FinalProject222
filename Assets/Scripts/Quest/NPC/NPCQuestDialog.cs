@@ -225,7 +225,11 @@ public class NPCQuestDialog : MonoBehaviour
     private string BuildTurnInText(QuestData q)
     {
         string r = "";
-        if (q.itemReward != null)   r += $"\n  Item:  {q.itemReward.ItemName}";
+        if (q.itemReward != null)
+        {
+            string displayName = string.IsNullOrEmpty(q.itemReward.ItemName) ? q.itemReward.name : q.itemReward.ItemName;
+            r += $"\n  Item:  {displayName}";
+        }
         if (q.goldReward > 0)       r += $"\n  Gold:  {q.goldReward}";
         if (q.experienceReward > 0) r += $"\n  EXP:   {q.experienceReward}";
         string section = r.Length > 0 ? $"\n\nRewards:{r}" : "";

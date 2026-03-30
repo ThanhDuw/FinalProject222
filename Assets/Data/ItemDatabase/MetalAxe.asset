@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a96cf71494313b42b0e2459b8aa90d2, type: 3}
   m_Name: MetalAxe
   m_EditorClassIdentifier: 
-  ItemName: 
+  ItemName: Metal Axe
   ItemSprite: {fileID: 21300000, guid: 8f840e95e23b8f245b9f154700527a35, type: 3}
   Description: 
   WorldObjectPrefab: {fileID: 6311904347659307272, guid: 09bfdf542703cc44a86bbdf7f37c364f,

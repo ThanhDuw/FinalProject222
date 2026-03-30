@@ -62,6 +62,11 @@ namespace CreatorKitCode
         /// <param name="item">Which item to equip</param>
         public void Equip(EquipmentItem item)
         {
+            // Prevent unequipping and re-equipping the exact same item,
+            // which could trigger unwanted Inventory.AddItem actions.
+            if (item.Slot == (EquipmentItem.EquipmentSlot) 666 && Weapon == item) return;
+            if (item.Slot != (EquipmentItem.EquipmentSlot) 666 && GetItem(item.Slot) == item) return;
+
             Unequip(item.Slot, true);
 
             OnEquiped?.Invoke(item);

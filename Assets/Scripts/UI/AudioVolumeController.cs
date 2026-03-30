@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using CreatorKitCodeInternal;
@@ -36,12 +37,20 @@ public class AudioVolumeController : MonoBehaviour
     [Tooltip("Drag AmbiencePlayer here (PlayerCore/Managers/AmbiencePlayer).")]
     [SerializeField] private AmbiencePlayer ambiencePlayer;
 
+    // ── Static Events ─────────────────────────────────────────────────────────
+    /// <summary>Fired when the music slider changes. Listeners should update their AudioSource.volume.</summary>
+    public static event Action<float> OnMusicVolumeChanged;
+    /// <summary>Fired when the SFX slider changes.</summary>
+    public static event Action<float> OnSFXVolumeChanged;
+
     // ── Cached SFX volume ─────────────────────────────────────────────────────
-    // SFXManager.PlaySound reads this static property at play-time.
     private static float s_SFXVolume = 1f;
 
     /// <summary>Current SFX volume (0–1). Read by SFXManager when playing sounds.</summary>
     public static float SFXVolume => s_SFXVolume;
+
+    /// <summary>Current Music volume (0–1). Reads directly from PlayerPrefs so it works even before the Options panel is opened.</summary>
+    public static float MusicVolume => PlayerPrefs.GetFloat(KeyMusic, 1f);
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -74,17 +83,17 @@ public class AudioVolumeController : MonoBehaviour
         {
             musicSlider.minValue = 0f;
             musicSlider.maxValue = 1f;
-            musicSlider.value    = savedMusic;
+            musicSlider.SetValueWithoutNotify(savedMusic);
         }
 
         if (vfxSlider != null)
         {
             vfxSlider.minValue = 0f;
             vfxSlider.maxValue = 1f;
-            vfxSlider.value    = savedSFX;
+            vfxSlider.SetValueWithoutNotify(savedSFX);
         }
 
-        // Apply loaded values immediately
+        // Apply loaded values immediately (local sources + broadcast)
         ApplyMusicVolume(savedMusic);
         ApplySFXVolume(savedSFX);
     }
@@ -127,6 +136,9 @@ public class AudioVolumeController : MonoBehaviour
         // Sync ambience volume with music slider
         if (ambiencePlayer != null)
             ambiencePlayer.SetMasterVolume(value);
+
+        // Broadcast to all listeners (MainMenu BGM, RandomBGMPlayer, etc.)
+        OnMusicVolumeChanged?.Invoke(value);
     }
 
     private void ApplySFXVolume(float value)
@@ -134,6 +146,9 @@ public class AudioVolumeController : MonoBehaviour
         s_SFXVolume = value;
         // SFX pool sources read AudioVolumeController.SFXVolume at play-time
         // via SFXManager.PlaySound — no explicit source assignment needed.
+
+        // Broadcast to any SFX listeners
+        OnSFXVolumeChanged?.Invoke(value);
     }
 }
 

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using CreatorKitCode;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -39,13 +40,13 @@ public class MainMenuController : MonoBehaviour
 
     private void Awake()
     {
-        if (startButton        != null) startButton.onClick.AddListener(OnStartPressed);
-        if (loadButton         != null) loadButton.onClick.AddListener(OnLoadPressed);
-        if (optionsButton      != null) optionsButton.onClick.AddListener(OnOptionsPressed);
-        if (helpButton         != null) helpButton.onClick.AddListener(OnHelpPressed);
-        if (quitButton         != null) quitButton.onClick.AddListener(OnQuitPressed);
-        if (optionsCloseButton != null) optionsCloseButton.onClick.AddListener(OnOptionsPressed);
-        if (helpCloseButton    != null) helpCloseButton.onClick.AddListener(OnHelpPressed);
+        if (startButton        != null) { startButton.onClick.AddListener(PlayClickSound);        startButton.onClick.AddListener(OnStartPressed); }
+        if (loadButton         != null) { loadButton.onClick.AddListener(PlayClickSound);         loadButton.onClick.AddListener(OnLoadPressed); }
+        if (optionsButton      != null) { optionsButton.onClick.AddListener(PlayClickSound);      optionsButton.onClick.AddListener(OnOptionsPressed); }
+        if (helpButton         != null) { helpButton.onClick.AddListener(PlayClickSound);         helpButton.onClick.AddListener(OnHelpPressed); }
+        if (quitButton         != null) { quitButton.onClick.AddListener(PlayClickSound);         quitButton.onClick.AddListener(OnQuitPressed); }
+        if (optionsCloseButton != null) { optionsCloseButton.onClick.AddListener(PlayClickSound); optionsCloseButton.onClick.AddListener(OnOptionsPressed); }
+        if (helpCloseButton    != null) { helpCloseButton.onClick.AddListener(PlayClickSound);    helpCloseButton.onClick.AddListener(OnHelpPressed); }
     }
 
     private void Start()
@@ -55,17 +56,38 @@ public class MainMenuController : MonoBehaviour
 
         // Fade in when MainMenu first opens
         SceneTransitionUI.Instance?.FadeIn();
+
+        // ── Phát nhạc nền (BGM) ──
+        if (mainMenuBGM != null)
+        {
+            bgmAudioSource = gameObject.AddComponent<AudioSource>();
+            bgmAudioSource.clip = mainMenuBGM;
+            bgmAudioSource.loop = true;
+            bgmAudioSource.playOnAwake = false;
+            bgmAudioSource.volume = AudioVolumeController.MusicVolume;
+            bgmAudioSource.Play();
+        }
+    }
+
+    private void OnEnable()
+    {
+        AudioVolumeController.OnMusicVolumeChanged += OnMusicVolumeChanged;
+    }
+
+    private void OnDisable()
+    {
+        AudioVolumeController.OnMusicVolumeChanged -= OnMusicVolumeChanged;
     }
 
     private void OnDestroy()
     {
-        if (startButton        != null) startButton.onClick.RemoveListener(OnStartPressed);
-        if (loadButton         != null) loadButton.onClick.RemoveListener(OnLoadPressed);
-        if (optionsButton      != null) optionsButton.onClick.RemoveListener(OnOptionsPressed);
-        if (helpButton         != null) helpButton.onClick.RemoveListener(OnHelpPressed);
-        if (quitButton         != null) quitButton.onClick.RemoveListener(OnQuitPressed);
-        if (optionsCloseButton != null) optionsCloseButton.onClick.RemoveListener(OnOptionsPressed);
-        if (helpCloseButton    != null) helpCloseButton.onClick.RemoveListener(OnHelpPressed);
+        if (startButton        != null) { startButton.onClick.RemoveListener(PlayClickSound);        startButton.onClick.RemoveListener(OnStartPressed); }
+        if (loadButton         != null) { loadButton.onClick.RemoveListener(PlayClickSound);         loadButton.onClick.RemoveListener(OnLoadPressed); }
+        if (optionsButton      != null) { optionsButton.onClick.RemoveListener(PlayClickSound);      optionsButton.onClick.RemoveListener(OnOptionsPressed); }
+        if (helpButton         != null) { helpButton.onClick.RemoveListener(PlayClickSound);         helpButton.onClick.RemoveListener(OnHelpPressed); }
+        if (quitButton         != null) { quitButton.onClick.RemoveListener(PlayClickSound);         quitButton.onClick.RemoveListener(OnQuitPressed); }
+        if (optionsCloseButton != null) { optionsCloseButton.onClick.RemoveListener(PlayClickSound); optionsCloseButton.onClick.RemoveListener(OnOptionsPressed); }
+        if (helpCloseButton    != null) { helpCloseButton.onClick.RemoveListener(PlayClickSound);    helpCloseButton.onClick.RemoveListener(OnHelpPressed); }
     }
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
@@ -130,6 +152,48 @@ public class MainMenuController : MonoBehaviour
 #else
         Application.Quit();
 #endif
+    }
+
+    // ── SFX ─────────────────────────────────────────────────────────────────
+
+    [Header("Audio (Fallback)")]
+    [Tooltip("Gắn MainMenu_BGM.mp3 vào đây để phát nhạc nền.")]
+    [SerializeField] private AudioClip mainMenuBGM;
+    [Tooltip("Gắn Button_Click.mp3 vào đây nếu Scene không có SFXManager.")]
+    [SerializeField] private AudioClip buttonClickSound;
+    
+    private AudioSource localAudioSource;
+    private AudioSource bgmAudioSource;
+
+    private void PlayClickSound()
+    {
+        // 1. Cố gắng sử dụng hệ thống chung nếu Managers prefab đã được nạp
+        if (SFXManager.Instance != null && SFXManager.Instance.ButtonClickSound != null)
+        {
+            SFXManager.PlayButtonClick();
+            return;
+        }
+
+        // 2. Dự phòng: Phát bằng AudioSource cục bộ, tuân thủ theo SFXVolume
+        if (buttonClickSound != null)
+        {
+            if (localAudioSource == null)
+            {
+                localAudioSource = gameObject.AddComponent<AudioSource>();
+                localAudioSource.playOnAwake = false;
+            }
+
+            localAudioSource.PlayOneShot(buttonClickSound, AudioVolumeController.SFXVolume);
+        }
+    }
+
+    /// <summary>
+    /// Callback: cập nhật volume BGM ngay khi người chơi kéo thanh trượt Music.
+    /// </summary>
+    private void OnMusicVolumeChanged(float volume)
+    {
+        if (bgmAudioSource != null)
+            bgmAudioSource.volume = volume;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

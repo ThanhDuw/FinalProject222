@@ -21,6 +21,29 @@ namespace CreatorKitCodeInternal
             s_Instance = this;
         }
 
+        void Start()
+        {
+            // Self-initialize from saved settings so volume is correct
+            // even if the Options panel hasn't been opened yet.
+            m_masterVolume = AudioVolumeController.MusicVolume;
+            ApplyVolumes();
+        }
+
+        private void OnEnable()
+        {
+            AudioVolumeController.OnMusicVolumeChanged += OnMusicVolumeChanged;
+        }
+
+        private void OnDisable()
+        {
+            AudioVolumeController.OnMusicVolumeChanged -= OnMusicVolumeChanged;
+        }
+
+        private void OnMusicVolumeChanged(float volume)
+        {
+            SetMasterVolume(volume);
+        }
+
         /// <summary>
         /// Called by AudioVolumeController to set the overall ambience volume.
         /// Preserves the current Far/Close ratio set by camera zoom.

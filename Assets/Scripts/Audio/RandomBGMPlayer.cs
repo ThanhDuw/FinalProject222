@@ -7,9 +7,9 @@ namespace CreatorKitCodeInternal
     public class RandomBGMPlayer : MonoBehaviour
     {
         public AudioClip[] clips;
+        private AudioSource m_source;
 
-        // Start is called before the first frame update
-void Start()
+        void Start()
         {
             if (clips.Length == 0)
             {
@@ -17,14 +17,26 @@ void Start()
                 return;
             }
 
-            var source = GetComponent<AudioSource>();
-            source.clip = clips[Random.Range(0, clips.Length)];
+            m_source = GetComponent<AudioSource>();
+            m_source.clip = clips[Random.Range(0, clips.Length)];
+            m_source.volume = AudioVolumeController.MusicVolume;
+            m_source.Play();
+        }
 
-            // Apply persisted music volume if available
-            float savedVolume = UnityEngine.PlayerPrefs.GetFloat("volume_music", 1f);
-            source.volume = savedVolume;
+        private void OnEnable()
+        {
+            AudioVolumeController.OnMusicVolumeChanged += OnMusicVolumeChanged;
+        }
 
-            source.Play();
+        private void OnDisable()
+        {
+            AudioVolumeController.OnMusicVolumeChanged -= OnMusicVolumeChanged;
+        }
+
+        private void OnMusicVolumeChanged(float volume)
+        {
+            if (m_source != null)
+                m_source.volume = volume;
         }
     }
 }

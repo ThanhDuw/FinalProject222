@@ -39,7 +39,7 @@ namespace CreatorKitCode
             public float Volume = 1.0f;
         }
     
-        static SFXManager Instance { get; set; }
+        public static SFXManager Instance { get; private set; }
 
         public AudioListener Listener;
         public Transform ListenerTarget;
@@ -50,6 +50,7 @@ namespace CreatorKitCode
         public AudioClip DefaultItemUsedSound;
         public AudioClip DefaultItemEquipedSound;
         public AudioClip DefaultPickupSound;
+        public AudioClip ButtonClickSound;
     
         public static AudioClip ItemUsedSound => Instance.DefaultItemUsedSound;
         public static AudioClip ItemEquippedSound => Instance.DefaultItemEquipedSound;
@@ -135,6 +136,19 @@ public static void PlaySound(Use useType, PlayData data)
 
             return clipArray[Random.Range(0, clipArray.Length)];
         }
+
+        /// <summary>
+        /// Play the UI button click sound effect (2D, respects SFX volume).
+        /// </summary>
+        public static void PlayButtonClick()
+        {
+            if (Instance == null || Instance.ButtonClickSound == null) return;
+            PlaySound(Use.Sound2D, new PlayData
+            {
+                Clip = Instance.ButtonClickSound,
+                Volume = 1.0f
+            });
+        }
     }
 }
 
@@ -151,6 +165,7 @@ public class SFXManagerEditor : Editor
     SerializedProperty m_DefaultItemUsedSound;
     SerializedProperty m_DefaultItemEquippedSound;
     SerializedProperty m_DefaultPickupSoundProp;
+    SerializedProperty m_ButtonClickSoundProp;
     
     void OnEnable()
     {
@@ -165,6 +180,7 @@ public class SFXManagerEditor : Editor
         m_DefaultItemUsedSound = serializedObject.FindProperty(nameof(SFXManager.DefaultItemUsedSound));
         m_DefaultItemEquippedSound = serializedObject.FindProperty(nameof(SFXManager.DefaultItemEquipedSound));
         m_DefaultPickupSoundProp = serializedObject.FindProperty(nameof(SFXManager.DefaultPickupSound));
+        m_ButtonClickSoundProp = serializedObject.FindProperty(nameof(SFXManager.ButtonClickSound));
         
         int useSize = Enum.GetValues(typeof(SFXManager.Use)).Length;
         if (m_PrefabsArrayProp.arraySize != useSize)
@@ -188,6 +204,7 @@ public class SFXManagerEditor : Editor
         EditorGUILayout.PropertyField(m_DefaultItemUsedSound);
         EditorGUILayout.PropertyField(m_DefaultItemEquippedSound);
         EditorGUILayout.PropertyField(m_DefaultPickupSoundProp);
+        EditorGUILayout.PropertyField(m_ButtonClickSoundProp);
         
         EditorGUILayout.LabelField("Prefab Per Use");
 

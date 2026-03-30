@@ -43,30 +43,51 @@ public class MenuController : MonoBehaviour
     {
         // ── Menu open/close ───────────────────────────────────────────────────
         if (menuOpenButton != null)
+        {
+            menuOpenButton.onClick.AddListener(PlayClickSound);
             menuOpenButton.onClick.AddListener(ToggleMenu);
+        }
 
         if (menuCloseButton != null)
+        {
+            menuCloseButton.onClick.AddListener(PlayClickSound);
             menuCloseButton.onClick.AddListener(CloseMenu);
+        }
 
         // ── Main Menu ────────────────────────────────────────────────────────
         if (mainMenuButton != null)
+        {
+            mainMenuButton.onClick.AddListener(PlayClickSound);
             mainMenuButton.onClick.AddListener(ReturnToMainMenu);
+        }
 
         // ── Quest Log ─────────────────────────────────────────────────────────
         if (questButton != null && questLogUI != null)
+        {
+            questButton.onClick.AddListener(PlayClickSound);
             questButton.onClick.AddListener(questLogUI.Toggle);
+        }
 
         // ── Options Panel ────────────────────────────────────────────────────
         if (optionButton != null)
+        {
+            optionButton.onClick.AddListener(PlayClickSound);
             optionButton.onClick.AddListener(ToggleOptionPanel);
+        }
 
         // ── Help Panel ───────────────────────────────────────────────────────
         if (helpButton != null)
+        {
+            helpButton.onClick.AddListener(PlayClickSound);
             helpButton.onClick.AddListener(ToggleHelpPanel);
+        }
 
         // ── Save Game ─────────────────────────────────────────────────────────
         if (saveButton != null && saveSystem != null)
+        {
+            saveButton.onClick.AddListener(PlayClickSound);
             saveButton.onClick.AddListener(SaveGame);
+        }
 
         // Start hidden
         questLogUI?.Close();
@@ -94,13 +115,13 @@ public class MenuController : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (menuOpenButton  != null) menuOpenButton.onClick.RemoveListener(ToggleMenu);
-        if (menuCloseButton != null) menuCloseButton.onClick.RemoveListener(CloseMenu);
-        if (mainMenuButton  != null) mainMenuButton.onClick.RemoveListener(ReturnToMainMenu);
-        if (questButton     != null && questLogUI != null) questButton.onClick.RemoveListener(questLogUI.Toggle);
-        if (optionButton    != null) optionButton.onClick.RemoveListener(ToggleOptionPanel);
-        if (helpButton      != null) helpButton.onClick.RemoveListener(ToggleHelpPanel);
-        if (saveButton      != null) saveButton.onClick.RemoveListener(SaveGame);
+        if (menuOpenButton  != null) { menuOpenButton.onClick.RemoveListener(PlayClickSound);  menuOpenButton.onClick.RemoveListener(ToggleMenu); }
+        if (menuCloseButton != null) { menuCloseButton.onClick.RemoveListener(PlayClickSound); menuCloseButton.onClick.RemoveListener(CloseMenu); }
+        if (mainMenuButton  != null) { mainMenuButton.onClick.RemoveListener(PlayClickSound);  mainMenuButton.onClick.RemoveListener(ReturnToMainMenu); }
+        if (questButton     != null && questLogUI != null) { questButton.onClick.RemoveListener(PlayClickSound); questButton.onClick.RemoveListener(questLogUI.Toggle); }
+        if (optionButton    != null) { optionButton.onClick.RemoveListener(PlayClickSound);    optionButton.onClick.RemoveListener(ToggleOptionPanel); }
+        if (helpButton      != null) { helpButton.onClick.RemoveListener(PlayClickSound);      helpButton.onClick.RemoveListener(ToggleHelpPanel); }
+        if (saveButton      != null) { saveButton.onClick.RemoveListener(PlayClickSound);      saveButton.onClick.RemoveListener(SaveGame); }
     }
 
     // ── Called by whatever opens the pause/menu panel ────────────────────────
@@ -133,6 +154,13 @@ public class MenuController : MonoBehaviour
         helpPanel.SetActive(!helpPanel.activeSelf);
         // Close other sub-panels
         if (optionPanel != null && helpPanel.activeSelf) optionPanel.SetActive(false);
+    }
+
+    // ── SFX ──────────────────────────────────────────────────────────────────
+
+    private void PlayClickSound()
+    {
+        SFXManager.PlayButtonClick();
     }
 
     public void ToggleMenu()
