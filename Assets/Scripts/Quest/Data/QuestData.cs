@@ -19,6 +19,15 @@ public class QuestData : ScriptableObject
     public int experienceReward;
     public int goldReward;
     public Item itemReward; // ScriptableObject asset -- assign MetalAxe / WarriorHelmet / LegendaryRake in Inspector
+
+    [Header("Turn-In Dialogue (multi-step)")]
+    [Tooltip("Chuỗi hội thoại hiển thị tuần tự khi trả nhiệm vụ. Bước CUỐI CÙNG sẽ trigger hiển thị Reward.")]
+    [TextArea(2, 4)]
+    public List<string> turnInDialogueSteps = new List<string>();
+
+    [Header("Reward Display (3D)")]
+    [Tooltip("Prefab 3D sẽ spawn và xoay giữa màn hình sau dialogue cuối.")]
+    public GameObject rewardDisplayPrefab;
 }
 
 [Serializable]

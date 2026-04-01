@@ -19,10 +19,18 @@ MonoBehaviour:
     and free this land from darkness."
   objectives:
   - objectiveID: obj_03_kill_boss
-    description: Defeat the Mage Skeleton (0/1)
+    description: 'Defeat the Mage Skeleton '
     type: 0
-    targetID: MageSkeleton
+    targetID: Skeleton Mage Boss
     requiredAmount: 1
   experienceReward: 300
   goldReward: 500
   itemReward: {fileID: 11400000, guid: 62615692eb539644ebf9b0d21f4b5d48, type: 2}
+  turnInDialogueSteps:
+  - Thank you so much, Hero! The Bone Mage has finally been defeated. Our village
+    will be at peace again, thanks to you.
+  - "I wish to bestow upon you the most precious treasure of the Sheriff family\u2014the
+    Legendary Rake! Legend has it that it was forged from a meteorite and grants
+    unparalleled power to those who are worthy."
+  rewardDisplayPrefab: {fileID: 7833826867700364905, guid: df20e76f0f31b184c91eb077357007bb,
+    type: 3}

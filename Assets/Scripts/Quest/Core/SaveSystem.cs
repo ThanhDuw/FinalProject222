@@ -165,8 +165,8 @@ public class SaveSystem : MonoBehaviour
         Debug.Log($"[SaveSystem] Scene saved: index={sceneIndex}, spawn='{spawnPointID}'");
     }
 
-    /// <summary>Returns saved scene data, or null if none exists.</summary>
-    public SceneSaveModel LoadSceneData()
+    /// <summary>Returns saved scene data, or null if none exists. Static for access from Main Menu.</summary>
+    public static SceneSaveModel LoadSceneData()
     {
         if (!PlayerPrefs.HasKey(SceneSaveKey)) return null;
         var json = PlayerPrefs.GetString(SceneSaveKey);
@@ -209,7 +209,7 @@ public class SaveSystem : MonoBehaviour
     /// Returns true if a valid save exists.
     /// Static so MainMenuController can call it without a MonoBehaviour instance.
     /// </summary>
-    public static bool HasSaveData() => PlayerPrefs.HasKey("PlayerSceneData");
+    public static bool HasSaveData() => PlayerPrefs.HasKey(SceneSaveKey);
 
     /// <summary>
     /// Wipes every save key. Called by MainMenuController for New Game.
@@ -217,12 +217,12 @@ public class SaveSystem : MonoBehaviour
     /// </summary>
     public static void ClearAllData()
     {
-        PlayerPrefs.DeleteKey("QuestSaveData");
-        PlayerPrefs.DeleteKey("InventorySaveData");
-        PlayerPrefs.DeleteKey("EquipmentSaveData");
-        PlayerPrefs.DeleteKey("PlayerHealthData");
-        PlayerPrefs.DeleteKey("PlayerSceneData");
-        PlayerPrefs.DeleteKey("SaveMetadata");
+        PlayerPrefs.DeleteKey(QuestSaveKey);
+        PlayerPrefs.DeleteKey(InventorySaveKey);
+        PlayerPrefs.DeleteKey(EquipmentSaveKey);
+        PlayerPrefs.DeleteKey(HealthSaveKey);
+        PlayerPrefs.DeleteKey(SceneSaveKey);
+        PlayerPrefs.DeleteKey(MetadataSaveKey);
         PlayerPrefs.Save();
         Debug.Log("[SaveSystem] All save data cleared.");
     }

@@ -39,6 +39,7 @@ public class NPCQuestDialog : MonoBehaviour
     private bool  isPlayerInRange;
     private bool  isDialogueOpen;
     private float _blinkTimer;
+    private int   _turnInStepIndex = 0;
 
     private enum DialogueStep
     {
@@ -125,7 +126,18 @@ public class NPCQuestDialog : MonoBehaviour
         var state = GetQuestState(q);
         if      (state == QuestState.Inactive)      ShowPanel(BuildOfferText(q),  DialogueStep.OfferQuest,         q);
         else if (state == QuestState.Active)        ShowPanel(BuildActiveText(q), DialogueStep.QuestAlreadyActive, q);
-        else if (state == QuestState.ReadyToTurnIn) ShowPanel(BuildTurnInText(q), DialogueStep.TurnInQuest,         q);
+        else if (state == QuestState.ReadyToTurnIn)
+        {
+            _turnInStepIndex = 0;
+            if (q.turnInDialogueSteps != null && q.turnInDialogueSteps.Count > 0)
+            {
+                ShowPanel(q.turnInDialogueSteps[0], DialogueStep.TurnInQuest, q);
+            }
+            else
+            {
+                ShowPanel(BuildTurnInText(q), DialogueStep.TurnInQuest, q);
+            }
+        }
         else ShowPanel("Thank you for everything! You've completed all my requests.",
                        DialogueStep.QuestCompleted, null);
     }
@@ -142,10 +154,23 @@ public class NPCQuestDialog : MonoBehaviour
         }
         else if (currentStep == DialogueStep.TurnInQuest && currentQuestShown != null)
         {
+            if (currentQuestShown.turnInDialogueSteps != null && currentQuestShown.turnInDialogueSteps.Count > 0)
+            {
+                _turnInStepIndex++;
+                if (_turnInStepIndex < currentQuestShown.turnInDialogueSteps.Count)
+                {
+                    ShowPanel(currentQuestShown.turnInDialogueSteps[_turnInStepIndex], DialogueStep.TurnInQuest, currentQuestShown);
+                    return; // Prevent closing the dialogue
+                }
+            }
+
             if (QuestManager.Instance != null)
                 QuestManager.Instance.CompleteQuest(currentQuestShown.questID);
             else
                 Debug.LogWarning("[NPCQuestDialog] QuestManager.Instance is null.");
+
+            if (currentQuestShown.rewardDisplayPrefab != null)
+                GameEvents.RaiseShowReward(currentQuestShown.rewardDisplayPrefab);
         }
         CloseDialogue();
     }

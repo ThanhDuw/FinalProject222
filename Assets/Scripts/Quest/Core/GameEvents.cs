@@ -52,4 +52,8 @@ public static class GameEvents
 
     public static void RaiseSceneTransitionComplete()
         => OnSceneTransitionComplete?.Invoke();
+
+    public static event Action<UnityEngine.GameObject> OnShowReward;
+    public static void RaiseShowReward(UnityEngine.GameObject prefab)
+        => OnShowReward?.Invoke(prefab);
 }

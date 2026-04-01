@@ -31,7 +31,9 @@ namespace CreatorKitCodeInternal {
         int m_DeathAnimHash;
         int m_HitAnimHash;
         bool m_Pursuing;
-        bool m_IsDead = false;
+        
+        bool m_IsInitialized = false;
+bool m_IsDead = false;
 
         float m_PursuitTimer = 0.0f;
 
@@ -67,12 +69,17 @@ void Start()
 
             m_LootSpawner = GetComponent<LootSpawner>();
         
-            m_StartingAnchor = transform.position;
+            
+            
+            m_IsInitialized = true;
+m_StartingAnchor = transform.position;
         }
 
         // Update is called once per frame
 void Update()
         {
+            if (!m_IsInitialized) return;
+            
             if (m_IsDead) return;
 
             if (m_CharacterData.Stats.CurrentHealth == 0)

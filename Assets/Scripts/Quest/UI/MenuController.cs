@@ -185,9 +185,15 @@ public class MenuController : MonoBehaviour
     /// </summary>
     private void SaveGame()
     {
+        // Fallback: Nếu tham chiếu bị thiếu trong Inspector, thử tìm kiếm trong Scene
         if (saveSystem == null)
         {
-            Debug.LogWarning("[MenuController] SaveSystem reference not assigned in Inspector.");
+            saveSystem = FindFirstObjectByType<SaveSystem>();
+        }
+
+        if (saveSystem == null)
+        {
+            Debug.LogWarning("[MenuController] SaveSystem reference not assigned in Inspector and could not be found in scene.");
             return;
         }
 

@@ -50,7 +50,8 @@ namespace CreatorKitCode
             {
                 Equipment.InitWeapon(StartingWeapon, this);
 
-                if (!SaveSystem.HasSaveData())
+                bool isPlayer = gameObject.CompareTag("Player");
+                if (!isPlayer || !SaveSystem.HasSaveData())
                 {
                     StartingWeapon.UsedBy(this);
                 }
@@ -81,6 +82,14 @@ namespace CreatorKitCode
         /// <returns>True if you can reach the target, False otherwise</returns>
         public bool CanAttackReach(CharacterData target)
         {
+            // Null protection: prevent crash if weapon not initialized
+            if (Equipment == null || Equipment.Weapon == null)
+            {
+                Debug.LogWarning($"[{CharacterName}] Cannot attack - Equipment hoặc Weapon chưa được khởi tạo! " +
+                                $"Đảm bảo Init() đã được gọi và StartingWeapon được gán.", this);
+                return false;
+            }
+            
             return Equipment.Weapon.CanHit(this, target);
         }
 

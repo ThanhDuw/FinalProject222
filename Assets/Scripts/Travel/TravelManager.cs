@@ -119,14 +119,7 @@ public class TravelManager : MonoBehaviour
         }
 
         // Load scene data from SaveSystem (static method, no scene instance needed)
-        SaveSystem saveSystemTemp = FindFirstObjectByType<SaveSystem>();
-        if (saveSystemTemp == null)
-        {
-            Debug.LogError("[TravelManager] SaveSystem not found. Cannot load scene data.");
-            return;
-        }
-
-        SaveSystem.SceneSaveModel sceneData = saveSystemTemp.LoadSceneData();
+        SaveSystem.SceneSaveModel sceneData = SaveSystem.LoadSceneData();
         
         if (sceneData == null)
         {
