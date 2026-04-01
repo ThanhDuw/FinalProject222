@@ -123,7 +123,7 @@ public class SaveSystem : MonoBehaviour
             return;
         }
         int maxHp  = Mathf.Max(1, characterData.Stats.stats.health);
-        float pct  = (float)characterData.Stats.CurrentHealth / maxHp;
+        float pct  = Mathf.Clamp01((float)characterData.Stats.CurrentHealth / maxHp);
         PlayerPrefs.SetFloat(HealthSaveKey, pct);
         PlayerPrefs.Save();
         Debug.Log("[SaveSystem] Health saved: " + characterData.Stats.CurrentHealth + "/" + maxHp);

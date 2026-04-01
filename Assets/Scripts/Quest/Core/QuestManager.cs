@@ -262,11 +262,22 @@ public class QuestManager : MonoBehaviour
             }
         }
 
-        // 3. Re-track every Active quest and restore its objective progress
+        // 3. Restore quest states from save data into questStates dict
+        //    (critical for Load Game from Main Menu where dict is all-Inactive)
+        if (savedData != null && savedData.quests != null)
+        {
+            foreach (var q in savedData.quests)
+            {
+                if (q == null || string.IsNullOrEmpty(q.questID)) continue;
+                questStates[q.questID] = q.state;
+            }
+        }
+
+        // 4. Re-track every Active or ReadyToTurnIn quest and restore objective progress
         int retracked = 0;
         foreach (var kvp in questStates)
         {
-            if (kvp.Value != QuestState.Active) continue;
+            if (kvp.Value != QuestState.Active && kvp.Value != QuestState.ReadyToTurnIn) continue;
 
             var questData = questDatabase?.GetQuestByID(kvp.Key);
             if (questData == null) continue;

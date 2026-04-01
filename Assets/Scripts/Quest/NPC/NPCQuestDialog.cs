@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -41,6 +42,13 @@ public class NPCQuestDialog : MonoBehaviour
     private float _blinkTimer;
     private int   _turnInStepIndex = 0;
 
+    [Header("Typewriter Effect")]
+    [SerializeField] private float typewriterSpeed = 30f; // characters per second
+
+    private Coroutine _typewriterCoroutine;
+    private bool      _isTyping = false;
+    private string    _fullDialogueText = "";
+
     private enum DialogueStep
     {
         OfferQuest,
@@ -83,8 +91,19 @@ public class NPCQuestDialog : MonoBehaviour
         if (!isPlayerInRange) return;
         if (GameInput.Instance != null && GameInput.Instance.InteractPressed)
         {
-            if (!isDialogueOpen) TryOpenDialog();
-            else                 OnContinuePressed();
+            if (!isDialogueOpen)
+            {
+                TryOpenDialog();
+            }
+            else if (_isTyping)
+            {
+                // Skip typewriter - show full text immediately
+                SkipTypewriter();
+            }
+            else
+            {
+                OnContinuePressed();
+            }
         }
     }
 
@@ -180,14 +199,60 @@ public class NPCQuestDialog : MonoBehaviour
         currentStep       = step;
         currentQuestShown = quest;
         isDialogueOpen    = true;
-        if (dialoguePanel    != null) dialoguePanel.SetActive(true);
-        if (npcNameText      != null) npcNameText.text      = npcName;
-        if (dialogueBodyText != null) dialogueBodyText.text = body;
+        if (dialoguePanel != null) dialoguePanel.SetActive(true);
+        if (npcNameText   != null) npcNameText.text = npcName;
+
+        // Start typewriter effect
+        _fullDialogueText = body;
+        if (dialogueBodyText != null)
+        {
+            if (_typewriterCoroutine != null)
+                StopCoroutine(_typewriterCoroutine);
+            _typewriterCoroutine = StartCoroutine(TypewriterCoroutine(body));
+        }
+    }
+
+    private IEnumerator TypewriterCoroutine(string fullText)
+    {
+        _isTyping = true;
+        dialogueBodyText.text = "";
+        float delay = typewriterSpeed > 0f ? 1f / typewriterSpeed : 0f;
+
+        foreach (char c in fullText)
+        {
+            dialogueBodyText.text += c;
+            if (delay > 0f)
+                yield return new WaitForSeconds(delay);
+        }
+
+        _isTyping = false;
+        _typewriterCoroutine = null;
+    }
+
+    private void SkipTypewriter()
+    {
+        if (_typewriterCoroutine != null)
+        {
+            StopCoroutine(_typewriterCoroutine);
+            _typewriterCoroutine = null;
+        }
+        if (dialogueBodyText != null)
+            dialogueBodyText.text = _fullDialogueText;
+        _isTyping = false;
     }
 
     private void CloseDialogue()
     {
         if (!isDialogueOpen) return;
+
+        // Stop any running typewriter
+        if (_typewriterCoroutine != null)
+        {
+            StopCoroutine(_typewriterCoroutine);
+            _typewriterCoroutine = null;
+        }
+        _isTyping = false;
+
         isDialogueOpen    = false;
         currentQuestShown = null;
         if (dialoguePanel    != null) dialoguePanel.SetActive(false);

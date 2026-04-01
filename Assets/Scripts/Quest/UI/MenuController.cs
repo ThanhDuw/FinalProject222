@@ -83,7 +83,7 @@ public class MenuController : MonoBehaviour
         }
 
         // ── Save Game ─────────────────────────────────────────────────────────
-        if (saveButton != null && saveSystem != null)
+        if (saveButton != null)
         {
             saveButton.onClick.AddListener(PlayClickSound);
             saveButton.onClick.AddListener(SaveGame);

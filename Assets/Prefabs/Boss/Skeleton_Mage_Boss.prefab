@@ -177,6 +177,9 @@ MonoBehaviour:
   m_DarkMagicDamageDelay: 0.6
   m_DarkMagicVfxCount: 8
   m_DarkMagicSpawnOffset: 1.2
+  m_BossDeathSound: {fileID: 8300000, guid: e9985f0e782d5244a9ac14ce076f8317, type: 3}
+  m_AttackLaughSound: {fileID: 8300000, guid: 49f45de957f5a1e45ae2ce5dc5cdeac0, type: 3}
+  m_BossThemeMusic: {fileID: 8300000, guid: 248d5c6c4b42df840b37e8ce11cfb893, type: 3}
 --- !u!114 &4810442986522179753
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -43,6 +43,11 @@ namespace CreatorKitCode
         [SerializeField] private float m_DarkMagicSpawnOffset = 1.2f;
         private float m_DarkMagicCooldownTimer = 0f;
 
+        [Header("Boss Audio")]
+        [SerializeField] private AudioClip m_BossDeathSound;
+        [SerializeField] private AudioClip m_AttackLaughSound;
+        [SerializeField] private AudioClip m_BossThemeMusic;
+
         private static readonly int ANIM_SPEED  = Animator.StringToHash("Speed");
         private static readonly int ANIM_SKILL1 = Animator.StringToHash("Skill1");
         private static readonly int ANIM_SKILL2 = Animator.StringToHash("Skill2");
@@ -51,6 +56,8 @@ namespace CreatorKitCode
 
         private BossState m_CurrentState = BossState.IDLE;
         private bool      m_IsCasting    = false;
+        private AudioSource m_ThemeSource;
+        private bool      m_ThemePlaying = false;
 
         private void Awake()
         {
@@ -58,6 +65,13 @@ namespace CreatorKitCode
             m_Animator            = GetComponentInChildren<Animator>();
             m_CharacterData       = GetComponent<CharacterData>();
             m_LightningController = GetComponent<LightningStrikeController>();
+
+            // Setup AudioSource for Boss Theme music
+            m_ThemeSource = gameObject.AddComponent<AudioSource>();
+            m_ThemeSource.loop = true;
+            m_ThemeSource.playOnAwake = false;
+            m_ThemeSource.volume = AudioVolumeController.MusicVolume;
+            AudioVolumeController.OnMusicVolumeChanged += OnMusicVolumeChanged;
         }
 
         private void Start()
@@ -65,7 +79,16 @@ namespace CreatorKitCode
             if (m_CharacterData != null) m_CharacterData.Init();
         }
 
-        private void OnDestroy() { }
+        private void OnDestroy()
+        {
+            AudioVolumeController.OnMusicVolumeChanged -= OnMusicVolumeChanged;
+        }
+
+        private void OnMusicVolumeChanged(float volume)
+        {
+            if (m_ThemeSource != null)
+                m_ThemeSource.volume = volume;
+        }
 
         private void Update()
         {
@@ -82,7 +105,11 @@ namespace CreatorKitCode
                 if (hits.Length > 0)
                 {
                     m_Target = hits[0].GetComponent<CharacterData>();
-                    if (m_Target != null) m_CurrentState = BossState.CHASING;
+                    if (m_Target != null)
+                    {
+                        m_CurrentState = BossState.CHASING;
+                        PlayBossTheme();
+                    }
                 }
             }
             else if (m_CurrentState == BossState.CHASING)
@@ -113,6 +140,9 @@ namespace CreatorKitCode
         private IEnumerator CastSkill(int idx)
         {
             m_IsCasting = true;
+            // Play Attack_Laugh when boss attacks
+            if (m_AttackLaughSound != null)
+                SFXManager.PlaySound(SFXManager.Use.Enemies, new SFXManager.PlayData { Clip = m_AttackLaughSound, Position = transform.position, Volume = 1f });
             float castTime = (idx == 1) ? m_LightningCastTime : m_DarkMagicCastTime;
             if (idx == 1) m_Animator.speed = 0.5f;
             m_Animator.SetTrigger((idx == 1) ? ANIM_SKILL1 : ANIM_SKILL2);
@@ -194,6 +224,10 @@ namespace CreatorKitCode
         {
             if (m_CurrentState == BossState.DEAD) return;
             m_CurrentState = BossState.DEAD; m_IsCasting = false; StopAllCoroutines();
+            // Play Boss_Death sound and stop Boss_Theme
+            if (m_BossDeathSound != null)
+                SFXManager.PlaySound(SFXManager.Use.Enemies, new SFXManager.PlayData { Clip = m_BossDeathSound, Position = transform.position, Volume = 1f });
+            StopBossTheme();
             m_Agent.enabled = false; m_Animator.speed = 1f;
             GameEvents.RaiseEnemyKilled(m_CharacterData.CharacterName);
             m_Animator.SetTrigger(ANIM_DEATH);
@@ -212,6 +246,40 @@ namespace CreatorKitCode
             if (go == null) return;
             if (PoolManager.Instance != null) { PoolManager.Instance.ReturnDelayed(go, prefab, delay); return; }
             if (delay > 0f) Destroy(go, delay); else Destroy(go);
+        }
+
+        private void PlayBossTheme()
+        {
+            if (m_ThemePlaying || m_BossThemeMusic == null) return;
+            m_ThemePlaying = true;
+
+            // Pause the map BGM
+            var bgm = FindObjectOfType<RandomBGMPlayer>();
+            if (bgm != null)
+            {
+                var bgmSource = bgm.GetComponent<AudioSource>();
+                if (bgmSource != null) bgmSource.Pause();
+            }
+
+            m_ThemeSource.clip = m_BossThemeMusic;
+            m_ThemeSource.volume = AudioVolumeController.MusicVolume;
+            m_ThemeSource.Play();
+        }
+
+        private void StopBossTheme()
+        {
+            if (!m_ThemePlaying) return;
+            m_ThemePlaying = false;
+
+            if (m_ThemeSource != null) m_ThemeSource.Stop();
+
+            // Resume the map BGM
+            var bgm = FindObjectOfType<RandomBGMPlayer>();
+            if (bgm != null)
+            {
+                var bgmSource = bgm.GetComponent<AudioSource>();
+                if (bgmSource != null) bgmSource.UnPause();
+            }
         }
 
         private void OnDrawGizmosSelected()
