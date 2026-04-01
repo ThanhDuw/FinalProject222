@@ -25,6 +25,9 @@ public class RewardDisplayUI : MonoBehaviour
     [Tooltip("Thêm component Canvas Group vào RewardPanel để hỗ trợ hiệu ứng mờ (Fade).")]
     [SerializeField] private CanvasGroup panelCanvasGroup;
     
+    [Header("Events")]
+    public UnityEngine.Events.UnityEvent OnPanelClosed;
+    
     [Header("Animation")]
     [SerializeField] private float fadeInDuration = 0.5f;
     [SerializeField] private float scaleFrom = 0.3f;  // Scale ban đầu (nhỏ)
@@ -177,6 +180,8 @@ public class RewardDisplayUI : MonoBehaviour
         // Khoá lại trạng thái chuột (tuỳ hệ thống game của bạn setup)
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        
+        OnPanelClosed?.Invoke();
     }
 
     private IEnumerator FadeAndScalePanel(float startAlpha, float endAlpha, 
