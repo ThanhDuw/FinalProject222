@@ -4,28 +4,28 @@ using UnityEngine.UI;
 using CreatorKitCodeInternal;
 
 /// <summary>
-/// AudioVolumeController — UI Controller (Options Panel)
+/// AudioVolumeController — Điều khiển UI (Bảng tùy chọn âm lượng)
 ///
-/// Connects Music_Slider and VFX_Slider to the audio system.
-/// Persists volume settings across sessions via PlayerPrefs.
+/// Kết nối Music_Slider và VFX_Slider với hệ thống âm thanh.
+/// Lưu trữ cài đặt âm lượng qua các phiên chơi bằng PlayerPrefs.
 ///
-/// Music Slider  → MusicPlayer AudioSource + AmbiencePlayer master volume
-/// VFX Slider    → SFXManager pool (via static SFXVolume property)
+/// Thanh trượt Music  → AudioSource của MusicPlayer + Âm lượng tổng của AmbiencePlayer
+/// Thanh trượt VFX    → Các nguồn âm trong SFXManager pool (qua thuộc tính tĩnh SFXVolume)
 ///
-/// Setup:
-///   1. Attach to OptionPanel_UI
-///   2. musicSlider  → Music_Slider/Slider
-///   3. vfxSlider    → VFX_Slider/Slider
-///   4. musicSource  → MusicPlayer AudioSource (auto-find fallback)
-///   5. ambiencePlayer → AmbiencePlayer (auto-find fallback)
+/// Thiết lập:
+///   1. Gắn vào OptionPanel_UI
+///   2. musicSlider  → Tham chiếu đến Slider của Music
+///   3. vfxSlider    → Tham chiếu đến Slider của VFX
+///   4. musicSource  → AudioSource của MusicPlayer (tự động tìm nếu để trống)
+///   5. ambiencePlayer → AmbiencePlayer (tự động tìm nếu để trống)
 /// </summary>
 public class AudioVolumeController : MonoBehaviour
 {
-    // ── PlayerPrefs keys ──────────────────────────────────────────────────────
+    // Các phím PlayerPrefs
     private const string KeyMusic = "volume_music";
     private const string KeySFX   = "volume_sfx";
 
-    // ── Inspector ─────────────────────────────────────────────────────────────
+    // Inspector Settings
     [Header("Sliders")]
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider vfxSlider;
@@ -37,26 +37,26 @@ public class AudioVolumeController : MonoBehaviour
     [Tooltip("Drag AmbiencePlayer here (PlayerCore/Managers/AmbiencePlayer).")]
     [SerializeField] private AmbiencePlayer ambiencePlayer;
 
-    // ── Static Events ─────────────────────────────────────────────────────────
-    /// <summary>Fired when the music slider changes. Listeners should update their AudioSource.volume.</summary>
+    // Các Sự kiện Tĩnh (Static Events)
+    /// <summary>Kích hoạt khi thanh trượt âm nhạc thay đổi. Các đối tượng lắng nghe nên cập nhật AudioSource.volume.</summary>
     public static event Action<float> OnMusicVolumeChanged;
-    /// <summary>Fired when the SFX slider changes.</summary>
+    /// <summary>Kích hoạt khi thanh trượt SFX thay đổi.</summary>
     public static event Action<float> OnSFXVolumeChanged;
 
-    // ── Cached SFX volume ─────────────────────────────────────────────────────
+    // Lưu trữ âm lượng SFX tạm thời
     private static float s_SFXVolume = 1f;
 
-    /// <summary>Current SFX volume (0–1). Read by SFXManager when playing sounds.</summary>
+    /// <summary>Âm lượng SFX hiện tại (0–1). Được SFXManager đọc khi phát âm thanh.</summary>
     public static float SFXVolume => s_SFXVolume;
 
-    /// <summary>Current Music volume (0–1). Reads directly from PlayerPrefs so it works even before the Options panel is opened.</summary>
+    /// <summary>Âm lượng Nhạc hiện tại (0–1). Đọc trực tiếp từ PlayerPrefs để hoạt động ngay cả trước khi bảng Options được mở.</summary>
     public static float MusicVolume => PlayerPrefs.GetFloat(KeyMusic, 1f);
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // Vòng đời của Script (Lifecycle)
 
     private void Awake()
     {
-        // Auto-find MusicPlayer if not assigned in Inspector
+        // Tự động tìm MusicPlayer nếu chưa được gán trong Inspector
         if (musicSource == null)
         {
             var go = GameObject.Find("MusicPlayer");
@@ -64,7 +64,7 @@ public class AudioVolumeController : MonoBehaviour
                 musicSource = go.GetComponent<AudioSource>();
         }
 
-        // Auto-find AmbiencePlayer if not assigned in Inspector
+        // Tự động tìm AmbiencePlayer nếu chưa được gán trong Inspector
         if (ambiencePlayer == null)
         {
             var go = GameObject.Find("AmbiencePlayer");
@@ -72,13 +72,13 @@ public class AudioVolumeController : MonoBehaviour
                 ambiencePlayer = go.GetComponent<AmbiencePlayer>();
         }
 
-        // Load persisted values, default to 1 if first run
+        // Tải các giá trị đã lưu, mặc định là 1 nếu chạy lần đầu
         float savedMusic = PlayerPrefs.GetFloat(KeyMusic, 1f);
         float savedSFX   = PlayerPrefs.GetFloat(KeySFX,   1f);
 
         s_SFXVolume = savedSFX;
 
-        // Initialise sliders without triggering callbacks yet
+        // Khởi tạo các thanh trượt mà chưa kích hoạt callback (tránh bị lặp)
         if (musicSlider != null)
         {
             musicSlider.minValue = 0f;
@@ -93,7 +93,7 @@ public class AudioVolumeController : MonoBehaviour
             vfxSlider.SetValueWithoutNotify(savedSFX);
         }
 
-        // Apply loaded values immediately (local sources + broadcast)
+        // Áp dụng các giá trị đã tải ngay lập tức (cho local sources và broadcast)
         ApplyMusicVolume(savedMusic);
         ApplySFXVolume(savedSFX);
     }
@@ -110,7 +110,7 @@ public class AudioVolumeController : MonoBehaviour
         if (vfxSlider   != null) vfxSlider.onValueChanged.RemoveListener(OnSFXChanged);
     }
 
-    // ── Slider callbacks ──────────────────────────────────────────────────────
+    // Các hàm Callbacks của Slider
 
     private void OnMusicChanged(float value)
     {
@@ -126,28 +126,28 @@ public class AudioVolumeController : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // ── Apply helpers ─────────────────────────────────────────────────────────
+    // Các hàm bổ trợ để áp dụng âm lượng
 
     private void ApplyMusicVolume(float value)
     {
         if (musicSource != null)
             musicSource.volume = value;
 
-        // Sync ambience volume with music slider
+        // Đồng bộ âm lượng môi trường với thanh trượt nhạc nền
         if (ambiencePlayer != null)
             ambiencePlayer.SetMasterVolume(value);
 
-        // Broadcast to all listeners (MainMenu BGM, RandomBGMPlayer, etc.)
+        // Phát tín hiệu đến tất cả các đối tượng đang lắng nghe (MainMenu BGM, RandomBGMPlayer, v.v.)
         OnMusicVolumeChanged?.Invoke(value);
     }
 
     private void ApplySFXVolume(float value)
     {
         s_SFXVolume = value;
-        // SFX pool sources read AudioVolumeController.SFXVolume at play-time
-        // via SFXManager.PlaySound — no explicit source assignment needed.
+        // Các nguồn âm SFX pool sẽ đọc AudioVolumeController.SFXVolume lúc bắt đầu phát
+        // thông qua SFXManager.PlaySound — không cần gán thủ công từng nguồn.
 
-        // Broadcast to any SFX listeners
+        // Phát tín hiệu đến bất kỳ đối tượng lắng nghe SFX nào
         OnSFXVolumeChanged?.Invoke(value);
     }
 }

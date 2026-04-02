@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -14,7 +14,7 @@ namespace CreatorKitCodeInternal
         Camera m_Camera;
         RenderTexture m_TargetTexture;
     
-        // Start is called before the first frame update
+        // Start được gọi trước khung hình đầu tiên (frame)
         void Start()
         {
             m_TargetTexture = new RenderTexture((int)TargetImage.rectTransform.rect.width * 2, (int)TargetImage.rectTransform.rect.height * 2, 16, RenderTextureFormat.ARGB32);
@@ -31,7 +31,7 @@ namespace CreatorKitCodeInternal
             m_Camera.cullingMask = (1 << LayerMask.NameToLayer("Player")) | (1 << LayerMask.NameToLayer("PlayerEquipment"));  
         }
 
-        // Update is called once per frame
+        // Update được gọi sau mỗi khung hình (frame)
         void Update()
         {
             Transform playerTransform = CharacterControl.Instance.transform;

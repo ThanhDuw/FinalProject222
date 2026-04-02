@@ -2,56 +2,46 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// NPCTraveler — NPC Controller (Travel System)
+/// NPCTraveler — Điều khiển NPC (Hệ thống Du lịch)
 ///
-/// Attach to any NPC that offers map travel (e.g., Peasant NPC).
+/// Gắn vào bất kỳ NPC nào cung cấp khả năng dịch chuyển bản đồ (ví dụ: NPC Dân làng).
 ///
-/// Flow:
-///   - Player walks into trigger radius  -> _isPlayerInRange = true, prompt blinks
-///   - Player presses E                  -> OpenTravelMenu()
-///   - TravelMenuUI shows destinations   -> Player selects one
+/// Luồng hoạt động:
+///   - Người chơi đi vào vùng kích hoạt -> _isPlayerInRange = true, lời nhắc nhấp nháy
+///   - Người chơi nhấn E                  -> OpenTravelMenu()
+///   - TravelMenuUI hiển thị các điểm đến -> Người chơi chọn một điểm
 ///   - OnDestinationSelected()           -> TravelManager.TravelTo(destination)
-///   - Player walks away                 -> CloseTravelMenu() auto-called, prompt hidden
+///   - Người chơi rời đi                 -> Tự động gọi CloseTravelMenu(), ẩn lời nhắc
 ///
-/// Setup requirements:
-///   1. CapsuleCollider (isTrigger = true) on this GameObject
-///   2. Player GameObject tagged "Player"
-///   3. Assign TravelMenuUI reference in Inspector
-///   4. Populate availableDestinations list with TravelDestinationData ScriptableObjects
-///   5. (Optional) Assign interactPrompt - a child world-space "E" label GameObject
+/// Yêu cầu thiết lập:
+///   1. Thêm CapsuleCollider (isTrigger = true) vào GameObject này
+///   2. Đặt tag "Player" cho GameObject người chơi
+///   3. Gán tham chiếu TravelMenuUI
+///   4. Thêm các ScriptableObject TravelDestinationData vào danh sách availableDestinations
+///   5. (Tùy chọn) Gán interactPrompt - một GameObject chứa nhãn "E" trong thế giới 3D làm con
 ///
-/// Dependency flow (per CLAUDE.md):
+/// Luồng phụ thuộc:
 ///   NPCTraveler -> TravelMenuUI -> TravelManager -> SceneManager
 /// </summary>
 public class NPCTraveler : MonoBehaviour
 {
-    // ── Inspector — NPC Info ──────────────────────────────────────────────────
-
     [Header("NPC Info")]
     [SerializeField] private string _npcName = "Peasant";
 
-    // ── Inspector — Travel Destinations ──────────────────────────────────────
-
     [Header("Travel Destinations")]
-    [Tooltip("List of maps this NPC can send the player to. Assign TravelDestinationData assets.")]
+    [Tooltip("Danh sách các bản đồ mà NPC này có thể đưa người chơi tới. Gán các asset TravelDestinationData.")]
     [SerializeField] private List<TravelDestinationData> _availableDestinations = new List<TravelDestinationData>();
-
-    // ── Inspector — Interaction ───────────────────────────────────────────────
 
     [Header("Interaction")]
     [SerializeField] private float   _interactionRadius = 2f;
 
     [Header("Interact Prompt")]
-    [Tooltip("Child world-space GameObject with an E label - shown and blinks when player is in range.")]
+    [Tooltip("GameObject con trong không gian thế giới với nhãn E - hiển thị và nhấp nháy khi người chơi trong phạm vi.")]
     [SerializeField] private GameObject _interactPrompt;
 
-    // ── Inspector — UI Reference ──────────────────────────────────────────────
-
     [Header("UI Reference")]
-    [Tooltip("Reference to the TravelMenuUI component in the scene Canvas.")]
+    [Tooltip("Tham chiếu đến thành phần TravelMenuUI trong Canvas của cảnh.")]
     [SerializeField] private TravelMenuUI _travelMenuUI;
-
-    // ── Runtime ───────────────────────────────────────────────────────────────
 
     private bool  _isPlayerInRange;
     private bool  _isMenuOpen;
@@ -59,8 +49,6 @@ public class NPCTraveler : MonoBehaviour
 
     private const float BlinkOnDuration      = 0.30f;
     private const float BlinkCycleDuration   = 0.45f;
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Start()
     {
@@ -82,8 +70,6 @@ public class NPCTraveler : MonoBehaviour
             CloseTravelMenu();
     }
 
-    // ── Trigger Detection ─────────────────────────────────────────────────────
-
     private void OnTriggerEnter(Collider other)
     {
         if (other != null && other.CompareTag("Player"))
@@ -99,11 +85,9 @@ public class NPCTraveler : MonoBehaviour
         }
     }
 
-    // ── Travel Menu Control ───────────────────────────────────────────────────
-
     /// <summary>
-    /// Opens the Travel Menu UI and populates it with available destinations.
-    /// Called when player presses E while in range.
+    /// Mở giao diện Menu Du lịch và nạp danh sách các điểm đến khả dụng.
+    /// Được gọi khi người chơi nhấn E trong phạm vi.
     /// </summary>
     public void OpenTravelMenu()
     {
@@ -126,8 +110,8 @@ public class NPCTraveler : MonoBehaviour
     }
 
     /// <summary>
-    /// Closes the Travel Menu UI.
-    /// Called when player walks away or cancels.
+    /// Đóng giao diện Menu Du lịch.
+    /// Được gọi khi người chơi đi xa hoặc hủy bỏ.
     /// </summary>
     public void CloseTravelMenu()
     {
@@ -138,8 +122,8 @@ public class NPCTraveler : MonoBehaviour
     }
 
     /// <summary>
-    /// Callback received from TravelMenuUI when the player selects a destination.
-    /// Triggers the actual travel via TravelManager.
+    /// Callback nhận từ TravelMenuUI khi người chơi chọn một điểm đến.
+    /// Kích hoạt quá trình dịch chuyển thực tế thông qua TravelManager.
     /// </summary>
     public void OnDestinationSelected(TravelDestinationData destination)
     {
@@ -149,7 +133,7 @@ public class NPCTraveler : MonoBehaviour
             return;
         }
 
-        // Close menu before travel so it does not persist across scene load
+        // Đóng menu trước khi dịch chuyển để không tồn tại sang Scene khác
         CloseTravelMenu();
 
         if (TravelManager.Instance == null)
@@ -161,8 +145,6 @@ public class NPCTraveler : MonoBehaviour
         Debug.Log($"[NPCTraveler] '{_npcName}' sending player to '{destination.DestinationName}'.");
         TravelManager.Instance.TravelTo(destination);
     }
-
-    // ── Private Helpers ───────────────────────────────────────────────────────
 
     private void HandleInteractInput()
     {
@@ -192,8 +174,6 @@ public class NPCTraveler : MonoBehaviour
         }
     }
 
-    // ── Validation ────────────────────────────────────────────────────────────
-
     private void ValidateSetup()
     {
         var col = GetComponent<Collider>();
@@ -211,8 +191,6 @@ public class NPCTraveler : MonoBehaviour
         if (_availableDestinations == null || _availableDestinations.Count == 0)
             Debug.LogWarning($"[NPCTraveler] '{name}': No TravelDestinationData assets assigned to availableDestinations.");
     }
-
-    // ── Gizmos ────────────────────────────────────────────────────────────────
 
     private void OnDrawGizmosSelected()
     {

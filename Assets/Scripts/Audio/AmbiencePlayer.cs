@@ -11,7 +11,7 @@ namespace CreatorKitCodeInternal
         public AudioSource FarAudioSource;
         public AudioSource CloseAudioSource;
 
-        // ── Master volume (controlled by AudioVolumeController) ──────────────
+
         private float m_masterVolume = 1f;
         private float m_farRatio     = 0f;
         private float m_closeRatio   = 1f;
@@ -23,8 +23,7 @@ namespace CreatorKitCodeInternal
 
         void Start()
         {
-            // Self-initialize from saved settings so volume is correct
-            // even if the Options panel hasn't been opened yet.
+            // Tự khởi tạo từ cài đặt đã lưu để đảm bảo âm lượng chính xác ngay cả khi chưa mở bảng Options.
             m_masterVolume = AudioVolumeController.MusicVolume;
             ApplyVolumes();
         }
@@ -45,8 +44,8 @@ namespace CreatorKitCodeInternal
         }
 
         /// <summary>
-        /// Called by AudioVolumeController to set the overall ambience volume.
-        /// Preserves the current Far/Close ratio set by camera zoom.
+        /// Được gọi bởi AudioVolumeController để thiết lập tổng âm lượng môi trường.
+        /// Giữ nguyên tỷ lệ Far/Close được đặt bởi độ thu phóng của camera.
         /// </summary>
         public void SetMasterVolume(float volume)
         {

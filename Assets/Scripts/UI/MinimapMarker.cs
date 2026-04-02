@@ -1,20 +1,20 @@
 using UnityEngine;
 
 /// <summary>
-/// MinimapMarker -- attach to any GameObject that should appear as a colored dot on the minimap.
+/// MinimapMarker -- gắn vào bất kỳ GameObject nào muốn hiển thị dưới dạng một chấm màu trên minimap.
 ///
-/// Creates a small flat quad child at runtime, placed above the entity on the "Minimap" layer.
-/// The MinimapCamera (cullingMask includes Minimap layer) renders it naturally as part of the scene.
-/// The Main Camera (cullingMask excludes Minimap layer) never sees it.
+/// Tạo một hình vuông (quad) nhỏ làm con khi chạy, đặt phía trên thực thể ở layer "Minimap".
+/// MinimapCamera (cullingMask bao gồm layer Minimap) sẽ hiển thị nó một cách tự nhiên như một phần của cảnh.
+/// Main Camera (cullingMask loại trừ layer Minimap) sẽ không bao giờ nhìn thấy nó.
 ///
-/// This is the same concept as PlayerDot but in world-space:
-///   - No script math needed for positioning
-///   - Always exactly where the entity is on the map
-///   - Disappears automatically when the entity is destroyed
+/// Đây là cùng khái niệm với PlayerDot nhưng ở không gian thế giới (world-space):
+///   - Không cần tính toán toán học để xác định vị trí
+///   - Luôn nằm chính xác vị trí của thực thể trên bản đồ
+///   - Tự động biến mất khi thực thể bị hủy
 ///
-/// Color convention:
-///   NPC    = Blue  (0, 0.4, 1)
-///   Enemy  = Red   (1, 0, 0)
+/// Quy ước màu sắc:
+///   NPC    = Xanh dương (0, 0.4, 1)
+///   Kẻ địch = Đỏ         (1, 0, 0)
 /// </summary>
 public class MinimapMarker : MonoBehaviour
 {

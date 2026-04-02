@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Attach to any NPC that offers one or more quests.
-/// Quest turn-in flow: Active -> objectives done -> ReadyToTurnIn
-/// -> Player returns to NPC + presses E -> reward summary shown
-/// -> Player confirms -> CompleteQuest() -> item reward granted
+/// Gắn vào bất kỳ NPC nào cung cấp một hoặc nhiều nhiệm vụ.
+/// Luồng trả nhiệm vụ: Active (Đang làm) -> Hoàn thành mục tiêu -> ReadyToTurnIn (Sẵn sàng trả)
+/// -> Người chơi trở lại NPC + nhấn E -> Hiển thị bảng tóm tắt phần thưởng
+/// -> Người chơi xác nhận -> CompleteQuest() -> Trao phần thưởng vật phẩm
 /// </summary>
 public class NPCQuestDialog : MonoBehaviour
 {
@@ -27,14 +27,14 @@ public class NPCQuestDialog : MonoBehaviour
     [SerializeField] private Button     continueButton;
 
     [Header("Prerequisites")]
-    [Tooltip("Quest IDs that must ALL be Completed before this NPC offers any quest.")]
+    [Tooltip("Các ID nhiệm vụ TẤT CẢ đều phải hoàn thành trước khi NPC này cung cấp nhiệm vụ nào.")]
     [SerializeField] private List<string> prerequisiteQuestIDs = new List<string>();
     [TextArea(2, 4)]
     [SerializeField] private string prerequisiteBlockedMessage =
         "You haven't proven yourself yet. Come back when you're ready.";
 
     [Header("Interact Prompt")]
-    [Tooltip("Child world-space GameObject with 'E' label - blinks when player is in range.")]
+    [Tooltip("GameObject con trong không gian thế giới với nhãn 'E' - nhấp nháy khi người chơi ở trong phạm vi.")]
     [SerializeField] private GameObject interactPrompt;
 
     private bool  isPlayerInRange;
@@ -43,7 +43,7 @@ public class NPCQuestDialog : MonoBehaviour
     private int   _turnInStepIndex = 0;
 
     [Header("Typewriter Effect")]
-    [SerializeField] private float typewriterSpeed = 30f; // characters per second
+    [SerializeField] private float typewriterSpeed = 30f; // số ký tự mỗi giây
 
     private Coroutine _typewriterCoroutine;
     private bool      _isTyping = false;
@@ -97,7 +97,6 @@ public class NPCQuestDialog : MonoBehaviour
             }
             else if (_isTyping)
             {
-                // Skip typewriter - show full text immediately
                 SkipTypewriter();
             }
             else
@@ -179,7 +178,7 @@ public class NPCQuestDialog : MonoBehaviour
                 if (_turnInStepIndex < currentQuestShown.turnInDialogueSteps.Count)
                 {
                     ShowPanel(currentQuestShown.turnInDialogueSteps[_turnInStepIndex], DialogueStep.TurnInQuest, currentQuestShown);
-                    return; // Prevent closing the dialogue
+                    return; // Ngăn không cho đóng hộp thoại
                 }
             }
 
@@ -202,7 +201,6 @@ public class NPCQuestDialog : MonoBehaviour
         if (dialoguePanel != null) dialoguePanel.SetActive(true);
         if (npcNameText   != null) npcNameText.text = npcName;
 
-        // Start typewriter effect
         _fullDialogueText = body;
         if (dialogueBodyText != null)
         {
@@ -245,7 +243,6 @@ public class NPCQuestDialog : MonoBehaviour
     {
         if (!isDialogueOpen) return;
 
-        // Stop any running typewriter
         if (_typewriterCoroutine != null)
         {
             StopCoroutine(_typewriterCoroutine);

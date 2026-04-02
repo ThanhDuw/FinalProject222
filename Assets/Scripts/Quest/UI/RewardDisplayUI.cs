@@ -26,6 +26,7 @@ public class RewardDisplayUI : MonoBehaviour
     [SerializeField] private CanvasGroup panelCanvasGroup;
     
     [Header("Events")]
+    public UnityEngine.Events.UnityEvent OnPanelOpened;
     public UnityEngine.Events.UnityEvent OnPanelClosed;
     
     [Header("Animation")]
@@ -72,10 +73,10 @@ public class RewardDisplayUI : MonoBehaviour
     {
         if (prefab == null) return;
         
-        // --- 1. Sinh prefab vào scene tại vị trí định sẵn ---
+        // Sinh prefab vào scene tại vị trí định sẵn
         _currentRewardInstance = Instantiate(prefab, spawnPosition, Quaternion.identity);
         
-        // --- 1b. Căn giữa mesh thực tế về spawnPosition ---
+        // Căn giữa mesh thực tế về spawnPosition
         // (Prefab có thể có child offset lớn, cần dời root để mesh nằm đúng tâm)
         Renderer[] renderers = _currentRewardInstance.GetComponentsInChildren<Renderer>();
         if (renderers.Length > 0)
@@ -88,7 +89,7 @@ public class RewardDisplayUI : MonoBehaviour
             _currentRewardInstance.transform.position += offset;
         }
         
-        // --- 2. Gán Layer "RewardDisplay" nếu có ---
+        // Gán Layer "RewardDisplay" nếu có
         int rewardLayer = LayerMask.NameToLayer("RewardDisplay");
         if (rewardLayer != -1)
         {
@@ -104,7 +105,7 @@ public class RewardDisplayUI : MonoBehaviour
             Debug.LogWarning("[RewardDisplayUI] Vui lòng tạo Layer tên 'RewardDisplay' trong Edit -> Project Settings.");
         }
 
-        // --- 3. Điều chỉnh Camera ---
+        // Điều chỉnh Camera
         if (rewardCamera != null)
         {
             // Đưa camera lại gần vật phẩm (cách khoảng 2.5 đơn vị theo trục Z và hơi cao hơn một chút)
@@ -115,19 +116,19 @@ public class RewardDisplayUI : MonoBehaviour
                 rewardCamera.targetTexture = renderTexture;
         }
 
-        // --- 4. Gắn kết cấu vào hình ảnh thô ---
+        // Gắn kết cấu vào hình ảnh thô
         if (rewardRawImage != null && renderTexture != null)
         {
             rewardRawImage.texture = renderTexture;
         }
 
-        // --- 5. Chín tên (lấy từ prefab) ---
+        // Lấy tên phần thưởng từ prefab
         if (rewardTitleText != null)
         {
             rewardTitleText.text = "Bạn Nhận Được: " + prefab.name.Replace("(Clone)", "");
         }
 
-        // --- 6. Hiện Panel với hiệu ứng (Fade + Scale) ---
+        // Hiện Panel với hiệu ứng (Fade + Scale)
         if (rewardPanel != null)
         {
             // Đảm bảo panel được kích hoạt
@@ -144,6 +145,8 @@ public class RewardDisplayUI : MonoBehaviour
             // Xử lý chuột
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            OnPanelOpened?.Invoke();
         }
     }
     

@@ -1,7 +1,7 @@
 /// <summary>
-/// Keeps this GameObject's rotation aligned with the main camera every frame,
-/// so it always faces the player regardless of NPC orientation.
-/// Attach to the InteractPrompt_E canvas root.
+/// Cập nhật góc quay của GameObject này để luôn hướng về camera chính mỗi khung hình,
+/// giúp nó luôn hướng về phía người chơi bất kể hướng của NPC.
+/// Gắn vào root canvas của InteractPrompt_E.
 /// </summary>
 public class NpcPromptBillboard : UnityEngine.MonoBehaviour
 {
@@ -22,7 +22,7 @@ public class NpcPromptBillboard : UnityEngine.MonoBehaviour
             else return;
         }
 
-        // Face toward camera position (no tilt, Y axis only)
+        // Hướng về vị trí camera (không nghiêng, chỉ quay trục Y)
         UnityEngine.Vector3 dir = transform.position - _cam.position;
         dir.y = 0f;
         if (dir.sqrMagnitude > 0.001f)

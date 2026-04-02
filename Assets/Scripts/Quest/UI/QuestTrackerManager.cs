@@ -39,11 +39,11 @@ public class QuestTrackerManager : MonoBehaviour
     {
         if (_sub) return;
         
-        // 1. Try to get QuestTracker from QuestManager (if it's a component there)
+        // Thử lấy QuestTracker từ QuestManager (nếu nó là một component ở đó)
         if (questTracker == null && QuestManager.Instance != null)
             questTracker = QuestManager.Instance.GetComponent<QuestTracker>();
 
-        // 2. If not found, look for it globally in the scene
+        // Nếu không tìm thấy, thử tìm kiếm trên toàn Scene
         if (questTracker == null)
             questTracker = FindFirstObjectByType<QuestTracker>();
 
@@ -54,7 +54,7 @@ public class QuestTrackerManager : MonoBehaviour
         }
 
         questTracker.OnProgressUpdated      += OnProgress;
-        questTracker.OnQuestTrackingStarted += OnProgress; // Added: refresh when tracking starts
+        questTracker.OnQuestTrackingStarted += OnProgress;
         questTracker.OnQuestTrackingStopped += OnStopped;
         
         if (QuestManager.Instance != null)

@@ -12,7 +12,7 @@ public class SaveSystem : MonoBehaviour
     private const string SceneSaveKey     = "PlayerSceneData";
     private const string MetadataSaveKey  = "SaveMetadata";
 
-    // -- Quest ----------------------------------------------------------------
+
 
     public void SaveQuestData(Dictionary<string, QuestState> questStates, IEnumerable<QuestProgress> activeProgresses)
     {
@@ -49,7 +49,7 @@ public class SaveSystem : MonoBehaviour
 
     public void ClearQuestData() { PlayerPrefs.DeleteKey(QuestSaveKey); PlayerPrefs.Save(); }
 
-    // -- Inventory ------------------------------------------------------------
+
 
     public void SaveInventoryData(InventorySystem inventory)
     {
@@ -77,7 +77,7 @@ public class SaveSystem : MonoBehaviour
 
     public void ClearInventoryData() { PlayerPrefs.DeleteKey(InventorySaveKey); PlayerPrefs.Save(); }
 
-    // -- Equipment ------------------------------------------------------------
+
 
     public void SaveEquipmentData(EquipmentSystem equipment)
     {
@@ -108,12 +108,10 @@ public class SaveSystem : MonoBehaviour
 
     public void ClearEquipmentData() { PlayerPrefs.DeleteKey(EquipmentSaveKey); PlayerPrefs.Save(); }
 
-    // -- Health ---------------------------------------------------------------
-
     /// <summary>
-    /// Saves the player's current health as a percentage of max health.
-    /// Stored as percentage so it stays valid if max health changes
-    /// after equipment is reapplied in the new scene.
+    /// Lưu trữ lượng máu hiện tại của người chơi dưới dạng phần trăm (percentage).
+    /// Việc lưu theo phần trăm giúp giá trị giữ nguyên tính hợp lệ nếu lượng máu tối đa thay đổi
+    /// sau khi đổi trang bị ở cảnh mới.
     /// </summary>
     public void SaveHealthData(CharacterData characterData)
     {
@@ -129,7 +127,7 @@ public class SaveSystem : MonoBehaviour
         Debug.Log("[SaveSystem] Health saved: " + characterData.Stats.CurrentHealth + "/" + maxHp);
     }
 
-    /// <summary>Returns saved health as a percentage (0..1). Returns -1 if no data exists.</summary>
+    /// <summary>Trả về lượng máu đã lưu dưới dạng phần trăm (0..1). Trả về -1 nếu không có dữ liệu.</summary>
     public float LoadHealthData()
     {
         if (!PlayerPrefs.HasKey(HealthSaveKey)) return -1f;
@@ -142,7 +140,7 @@ public class SaveSystem : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // -- Clear All ------------------------------------------------------------
+
 
     public void ClearAllSaveData()
     {
@@ -153,9 +151,7 @@ public class SaveSystem : MonoBehaviour
         ClearSceneData();
         ClearMetadata();
     }
-    // -- Scene ---------------------------------------------------------------
-
-    /// <summary>Saves the destination scene index and spawn point ID before scene load.</summary>
+    /// <summary>Lưu index của cảnh đích và ID của điểm hồi sinh (spawn point ID) trước khi tải cảnh.</summary>
     public void SaveSceneData(int sceneIndex, string spawnPointID)
     {
         var model = new SceneSaveModel { currentSceneIndex = sceneIndex, spawnPointID = spawnPointID ?? "" };
@@ -165,7 +161,7 @@ public class SaveSystem : MonoBehaviour
         Debug.Log($"[SaveSystem] Scene saved: index={sceneIndex}, spawn='{spawnPointID}'");
     }
 
-    /// <summary>Returns saved scene data, or null if none exists. Static for access from Main Menu.</summary>
+    /// <summary>Trả về dữ liệu cảnh đã lưu, hoặc null nếu không có dữ liệu. Là hàm static để gọi được từ Main Menu.</summary>
     public static SceneSaveModel LoadSceneData()
     {
         if (!PlayerPrefs.HasKey(SceneSaveKey)) return null;
@@ -177,9 +173,7 @@ public class SaveSystem : MonoBehaviour
 
     public void ClearSceneData() { PlayerPrefs.DeleteKey(SceneSaveKey); PlayerPrefs.Save(); }
 
-    // -- Metadata -------------------------------------------------------------
-
-    /// <summary>Writes a timestamp and save version to PlayerPrefs.</summary>
+    /// <summary>Lưu thời gian và phiên bản lưu trữ vào PlayerPrefs.</summary>
     public void SaveMetadataEntry()
     {
         var model = new SaveMetadata
@@ -191,7 +185,7 @@ public class SaveSystem : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    /// <summary>Returns save metadata, or null if none exists.</summary>
+    /// <summary>Trả về metadata của dữ liệu đã lưu, hoặc null nếu không có.</summary>
     public SaveMetadata LoadMetadata()
     {
         if (!PlayerPrefs.HasKey(MetadataSaveKey)) return null;
@@ -203,17 +197,15 @@ public class SaveSystem : MonoBehaviour
 
     public void ClearMetadata() { PlayerPrefs.DeleteKey(MetadataSaveKey); PlayerPrefs.Save(); }
 
-    // -- Static helpers -------------------------------------------------------
-
     /// <summary>
-    /// Returns true if a valid save exists.
-    /// Static so MainMenuController can call it without a MonoBehaviour instance.
+    /// Trả về true nếu có dữ liệu lưu hợp lệ.
+    /// Hàm dạng tĩnh (Static) nên MainMenuController có thể gọi nó mà không cần instance của MonoBehaviour.
     /// </summary>
     public static bool HasSaveData() => PlayerPrefs.HasKey(SceneSaveKey);
 
     /// <summary>
-    /// Wipes every save key. Called by MainMenuController for New Game.
-    /// Static so it can be called without a MonoBehaviour instance.
+    /// Xóa toàn bộ key đã lưu. Được gọi bởi MainMenuController khi tạo New Game.
+    /// Hàm dạng tĩnh nên có thể được gọi mà không cần instance của MonoBehaviour.
     /// </summary>
     public static void ClearAllData()
     {
@@ -228,13 +220,11 @@ public class SaveSystem : MonoBehaviour
     }
 
 
-    // -- Convenience wrapper --------------------------------------------------
-
     /// <summary>
-    /// Saves inventory, equipment, health, scene, and metadata in one call.
-    /// Quest data is excluded -- it requires QuestManager/QuestTracker context
-    /// and is saved separately by TravelManager.SaveQuestData().
-    /// Intended for pause menu / manual save triggers.
+    /// Lưu túi đồ, trang bị, máu, cảnh và metadata tất cả trong một lần gọi.
+    /// Dữ liệu nhiệm vụ (Quest) bị loại trừ -- vì nó yêu cầu QuestManager/QuestTracker
+    /// và được lưu riêng bởi TravelManager.SaveQuestData().
+    /// Dành cho nút Pause / kích hoạt lưu thủ công.
     /// </summary>
     public void SaveAll(CharacterData characterData, int sceneIndex, string spawnPointID)
     {
@@ -249,7 +239,7 @@ public class SaveSystem : MonoBehaviour
         Debug.Log("[SaveSystem] SaveAll complete.");
     }
 
-    // -- Models ---------------------------------------------------------------
+
 
     [Serializable] public class QuestSaveModel { public string questID; public QuestState state; public List<ObjectiveSaveModel> objectives; }
     [Serializable] public class ObjectiveSaveModel { public string objectiveID; public int currentCount; }

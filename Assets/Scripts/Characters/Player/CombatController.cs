@@ -25,29 +25,29 @@ namespace CreatorKitCodeInternal
         private int m_AttackParamID;
         private CombatState m_CurrentState = CombatState.Idle;
 
-        // Timing
+        // Các thông số thời gian
         private float m_AttackTimer = 0f;
         private float m_WindUpDuration = 0f;
         private float m_ActiveDuration = 0f;
         private float m_RecoveryDuration = 0f;
 
-        // Input buffer — allows queuing next attack during recovery
+        // Bộ đệm tác vụ — cho phép lưu trước đòn tấn công tiếp theo trong thời gian hồi chiêu
         private bool m_InputBuffered = false;
 
-        // For gizmo debugging
+        // Dành cho việc cấu hình gizmo dùng lúc debug
         private Vector3 m_LastAttackPos = Vector3.zero;
 
-        // Non-alloc buffers to reduce GC allocations
+        // Các bộ đệm Non-alloc giúp giảm chi phí thu gom rác bộ nhớ (GC)
         private readonly RaycastHit[] m_SphereCastHits = new RaycastHit[8];
         private readonly Collider[] m_OverlapHits = new Collider[8];
 
-        // Target tracking for UISystem
+        // Quản lý mục tiêu ngắm tới để dùng cho UISystem
         private CharacterData m_CurrentTarget = null;
         public CharacterData CurrentTarget => m_CurrentTarget;
 
         private Transform m_Transform;
 
-        // ── Lifecycle ─────────────────────────────────────────────────────────
+        // Lifecycle
 
         void Awake()
         {
@@ -84,11 +84,11 @@ namespace CreatorKitCodeInternal
 
         void LateUpdate()
         {
-            // Reset input buffer after processing each frame
+            // Xóa bộ đệm input sau khi đã xử lý xong mỗi frame
             m_InputBuffered = false;
         }
 
-        // ── Target Tracking ───────────────────────────────────────────────────
+        // Target Tracking
 
         private void UpdateTargetTracking()
         {
@@ -96,12 +96,12 @@ namespace CreatorKitCodeInternal
                 m_CurrentTarget = null;
         }
 
-        // ── Public API ────────────────────────────────────────────────────────
+        // Public API
 
         /// <summary>
-        /// Request an attack. If Idle, starts immediately.
-        /// If in Recovery, buffers the input so the next attack fires as soon
-        /// as the recovery window ends — enabling continuous attacking.
+        /// Yêu cầu tấn công. Nếu đang rảnh rỗi (Idle), đòn đánh sẽ diễn ra ngay lập tức.
+        /// Nếu đang hồi chiêu (Recovery), input sẽ được giữ lại để đòn tấn công tiếp theo tung ra
+        /// ngay sau khi thời gian hồi chiêu kết thúc — giúp tấn công liên tục.
         /// </summary>
         public void TryAttack()
         {
@@ -112,7 +112,7 @@ namespace CreatorKitCodeInternal
         }
 
         /// <summary>
-        /// Click-to-attack on a specific target.
+        /// Nhấp chuột để tấn công một mục tiêu xác định.
         /// </summary>
         public void TryAttackAt(CharacterData target)
         {
@@ -125,7 +125,7 @@ namespace CreatorKitCodeInternal
         }
 
         /// <summary>
-        /// Reset combat state (called on respawn / death).
+        /// Khởi tạo trạng thái combat (được sử dụng khi hồi sinh / chết).
         /// </summary>
         public void ResetCombat()
         {
@@ -135,7 +135,7 @@ namespace CreatorKitCodeInternal
             m_CurrentTarget = null;
         }
 
-        // ── State Machine ─────────────────────────────────────────────────────
+        // State Machine
 
         private void StartAttack()
         {
@@ -210,10 +210,10 @@ namespace CreatorKitCodeInternal
             }
         }
 
-        // ── Attack Frame (Animation Event) ────────────────────────────────────
+        // Sự kiện hoạt ảnh lúc đánh (Attack Frame)
 
         /// <summary>
-        /// Called by animation event. Performs damage check using cone sweep.
+        /// Được gọi bởi sự kiện của hoạt ảnh. Thực hiện tính toán sát thương bằng hình nón.
         /// </summary>
         public void AttackFrame()
         {
@@ -240,7 +240,7 @@ namespace CreatorKitCodeInternal
                 m_CurrentTarget = null;
             }
 
-            // Debug visualization
+            // Hiển thị khung đánh để dễ debug
             if (debugDraw)
             {
                 Debug.DrawRay(origin, m_Transform.forward * weaponRange, Color.red, 0.25f);
@@ -290,7 +290,7 @@ namespace CreatorKitCodeInternal
                 }
             }
 
-            // Sweep-based detection
+            // Phát hiện mục tiêu quét dọn bằng SphereCast
             int hitCount = Physics.SphereCastNonAlloc(
                 origin, sweepRadius, m_Transform.forward,
                 m_SphereCastHits, weaponRange, attackLayerMask);
@@ -302,7 +302,7 @@ namespace CreatorKitCodeInternal
                     ProcessTarget(col.GetComponentInParent<CharacterData>());
             }
 
-            // Fallback overlap to avoid ghost misses
+            // Phương pháp quét vòng lặp (overlap) để bù trừ lỗi kẹt nếu SphereCast đánh hụt ảo
             if (bestTarget == null)
             {
                 int overlapCount = Physics.OverlapSphereNonAlloc(
@@ -325,7 +325,7 @@ namespace CreatorKitCodeInternal
             m_LastAttackPos = origin;
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────
+        // Các hàm phụ trợ (Helpers)
 
         private void ApplyHit(CharacterData target, Vector3 origin)
         {
@@ -370,7 +370,7 @@ namespace CreatorKitCodeInternal
             return m_CharacterData.Equipment.Weapon.Stats.MaxRange;
         }
 
-        // ── Gizmos ────────────────────────────────────────────────────────────
+        // Hàm để hiển thị trên Gizmo (trong Editor)
 
         void OnDrawGizmosSelected()
         {
@@ -406,7 +406,7 @@ namespace CreatorKitCodeInternal
             }
         }
 
-        // ── Status Getters ────────────────────────────────────────────────────
+        // Các Status Getters
 
         public CombatState CurrentState => m_CurrentState;
         public bool IsAttacking => m_CurrentState != CombatState.Idle;

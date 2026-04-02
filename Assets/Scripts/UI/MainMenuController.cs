@@ -8,13 +8,13 @@ using UnityEditor;
 #endif
 
 /// <summary>
-/// Main Menu controller.
-/// Buttons wired via AddListener in Awake — no Inspector onClick needed.
-/// Assign all references in the Inspector on MainMenuManager.
+/// Điều khiển Main Menu.
+/// Các nút được gán sự kiện qua AddListener trong Awake — không cần thiết lập onClick trong Inspector.
+/// Gán tất cả các tham chiếu trong Inspector trên đối tượng MainMenuManager.
 /// </summary>
 public class MainMenuController : MonoBehaviour
 {
-    // ── Main Buttons ──────────────────────────────────────────────────────────
+    // Nút chính
     [Header("Main Buttons")]
     [SerializeField] private Button startButton;
     [SerializeField] private Button loadButton;
@@ -22,21 +22,21 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Button helpButton;
     [SerializeField] private Button quitButton;
 
-    // ── Panel Close Buttons ───────────────────────────────────────────────────
+    // Nút đóng bảng (Panel)
     [Header("Panel Close Buttons")]
     [SerializeField] private Button optionsCloseButton;
     [SerializeField] private Button helpCloseButton;
 
-    // ── Panels ────────────────────────────────────────────────────────────────
+    // Các bảng (Panels)
     [Header("Panels")]
     [SerializeField] private GameObject optionsPanel;
     [SerializeField] private GameObject helpPanel;
 
-    // ── Scene ─────────────────────────────────────────────────────────────────
+    // Cảnh (Scene)
     [Header("Scene")]
     [SerializeField] private string gameSceneName = "Western Village";
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // Vòng đời (Lifecycle)
 
     private void Awake()
     {
@@ -54,7 +54,7 @@ public class MainMenuController : MonoBehaviour
         SetPanel(optionsPanel, false);
         SetPanel(helpPanel, false);
 
-        // Fade in when MainMenu first opens
+        // Hiệu ứng mờ dần (Fade in) khi MainMenu mở lần đầu
         SceneTransitionUI.Instance?.FadeIn();
 
         // ── Phát nhạc nền (BGM) ──
@@ -90,29 +90,29 @@ public class MainMenuController : MonoBehaviour
         if (helpCloseButton    != null) { helpCloseButton.onClick.RemoveListener(PlayClickSound);    helpCloseButton.onClick.RemoveListener(OnHelpPressed); }
     }
 
-    // ── Callbacks ─────────────────────────────────────────────────────────────
+    // Các hàm phản hồi (Callbacks)
 
     /// <summary>
-    /// Called when Start button is clicked.
-    /// Step 6: Clears all save data before starting a fresh new game.
+    /// Được gọi khi nhấn nút Start.
+    /// Xóa toàn bộ dữ liệu đã lưu trước khi bắt đầu một trò chơi mới hoàn toàn.
     /// </summary>
     public void OnStartPressed()
     {
-        // Clear all save data to ensure fresh start
+        // Xóa toàn bộ dữ liệu để đảm bảo khởi đầu mới
         SaveSystem.ClearAllData();
         Debug.Log("[MainMenuController] New Game - all save data cleared.");
         LoadScene(gameSceneName);
     }
 
     /// <summary>
-    /// Called when Continue/Load button is clicked.
-    /// Step 7: Loads saved game if available, otherwise starts new game.
+    /// Được gọi khi nhấn nút Continue/Load.
+    /// Tải trò chơi đã lưu nếu có, nếu không thì bắt đầu trò chơi mới.
     /// </summary>
     public void OnLoadPressed()
     {
         if (HasSaveData())
         {
-            // Load saved game via TravelManager
+            // Tải trò chơi qua TravelManager
             if (TravelManager.Instance != null)
             {
                 TravelManager.Instance.LoadSavedGame();
@@ -154,7 +154,7 @@ public class MainMenuController : MonoBehaviour
 #endif
     }
 
-    // ── SFX ─────────────────────────────────────────────────────────────────
+    // Hiệu ứng âm thanh (SFX)
 
     [Header("Audio (Fallback)")]
     [Tooltip("Gắn MainMenu_BGM.mp3 vào đây để phát nhạc nền.")]
@@ -196,7 +196,7 @@ public class MainMenuController : MonoBehaviour
             bgmAudioSource.volume = volume;
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // Các hàm bổ trợ (Helpers)
 
     private void TogglePanel(GameObject panel)
     {
@@ -228,7 +228,7 @@ public class MainMenuController : MonoBehaviour
 
     private bool HasSaveData()
     {
-        // Use SaveSystem's static method to check for saved game data
+        // Sử dụng phương thức tĩnh của SaveSystem để kiểm tra dữ liệu đã lưu
         return SaveSystem.HasSaveData();
     }
 }

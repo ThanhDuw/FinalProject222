@@ -7,7 +7,7 @@ namespace CreatorKitCode
 {
     public class LightningStrikeController : MonoBehaviour
     {
-        // ==================== REFERENCES ====================
+
         [Header("VFX")]
         [SerializeField] private GameObject m_ZapPrefab;
         [SerializeField] private GameObject m_WarningDecalPrefab;
@@ -15,7 +15,7 @@ namespace CreatorKitCode
         [Header("SFX")]
         [SerializeField] private AudioClip m_LightningSound;
 
-        // ==================== CONFIGURATION ====================
+
         [Header("Ground Detection")]
         [SerializeField] private LayerMask m_GroundLayer = ~0;
 
@@ -31,18 +31,18 @@ namespace CreatorKitCode
         [SerializeField] private float m_DamagePerStrike = 20f;
         [SerializeField] private float m_DamageRadius    = 1.8f;
 
-        // ==================== RUNTIME ====================
+
         private bool m_IsExecuting = false;
         public bool IsExecuting => m_IsExecuting;
 
-        // ==================== PUBLIC API ====================
+
         public void ExecuteSequence(Vector3 targetPosition, CharacterData owner)
         {
             if (m_IsExecuting) return;
             StartCoroutine(DoStrikeSequence(targetPosition, owner));
         }
 
-        // ==================== COROUTINE ====================
+
         private IEnumerator DoStrikeSequence(Vector3 center, CharacterData owner)
         {
             m_IsExecuting = true;
@@ -53,7 +53,7 @@ namespace CreatorKitCode
             {
                 Vector3 groundPos = GetGroundPosition(strikePositions[i]);
 
-                // 1. Spawn warning disc sat mat dat
+                // 1. Tạo cảnh báo trên mặt đất
                 GameObject warning = null;
                 if (m_WarningDecalPrefab != null)
                 {
@@ -61,14 +61,14 @@ namespace CreatorKitCode
                     StartCoroutine(PulseWarning(warning, m_WarningDuration));
                 }
 
-                // 2. Cho warning hien thi
+                // 2. Chờ cảnh báo hiển thị
                 yield return new WaitForSeconds(m_WarningDuration);
 
-                // 3. Xoa warning
+                // 3. Xóa cảnh báo
                 if (warning != null)
                     Destroy(warning);
 
-                // 4. Spawn VFX + Play SFX cung luc khi set danh xuong
+                // 4. Khởi tạo hiệu ứng (VFX) và phát âm thanh (SFX) cùng lúc khi sét đánh xuống
                 if (m_ZapPrefab != null)
                 {
                     Vector3 zapPos = groundPos + Vector3.up * m_ZapGroundOffset;
@@ -88,10 +88,10 @@ namespace CreatorKitCode
                     });
                 }
 
-                // 5. Gay sat thuong
+                // 5. Gây sát thương
                 DealStrikeDamage(groundPos, owner);
 
-                // 6. Doi truoc tia tiep theo
+                // 6. Đợi trước khi phát tia tiếp theo
                 if (i < strikePositions.Length - 1)
                     yield return new WaitForSeconds(m_StrikeInterval);
             }
@@ -99,7 +99,7 @@ namespace CreatorKitCode
             m_IsExecuting = false;
         }
 
-        // ==================== HELPERS ====================
+
         private Vector3[] GenerateStrikePositions(Vector3 center, int count, float radius)
         {
             Vector3[] positions = new Vector3[count];
@@ -159,7 +159,7 @@ namespace CreatorKitCode
             }
         }
 
-        // ==================== GIZMOS ====================
+
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(1f, 0f, 0f, 0.3f);

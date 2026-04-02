@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 
 namespace CreatorKitCodeInternal {
     public class CharacterControl : MonoBehaviour, 
-        // COMBAT REFACTOR: Attack frames are now handled by CombatController.
+        // TÁI CẤU TRÚC COMBAT: Các frame tấn công hiện được xử lý bởi CombatController.
         AnimationControllerDispatcher.IFootstepFrameReceiver
     {
         public static CharacterControl Instance { get; protected set; }
@@ -31,7 +31,7 @@ namespace CreatorKitCodeInternal {
         [SerializeField] private float rotationSpeed = 15f; // Slerp interpolation speed for character facing
     
         Animator m_Animator;
-        CharacterController m_CharacterController;   // MOVEMENT REFACTOR: CharacterController-based movement
+        CharacterController m_CharacterController;   // TÁI CẤU TRÚC DI CHUYỂN: Di chuyển sử dụng CharacterController
         CharacterData m_CharacterData;
 
         HighlightableObject m_Highlighted;
@@ -56,11 +56,11 @@ namespace CreatorKitCodeInternal {
         CharacterAudio m_CharacterAudio;
         CombatController m_CombatController;         // COMBAT REFACTOR: Dedicated combat controller
 
-        // Legacy target highlighting layer.
+        // Layer được sử dụng để highlight mục tiêu lúc trước.
         int m_TargetLayer;
         CharacterData m_CurrentTargetCharacterData = null;
-        // Flag used by legacy click-to-attack flow to clear target after attack completes.
-        // (removed unused field m_ClearPostAttack)= false;
+        // Cờ được sử dụng ở luồng nhấp-để-tấn-công cũ nhằm xóa mục tiêu sau khi đòn đánh kết thúc.
+
 
         SpawnPoint m_CurrentSpawn = null;
     
@@ -71,15 +71,15 @@ namespace CreatorKitCodeInternal {
             ATTACKING
         }
 
-        // (removed unused field m_CurrentState)dntState;
+
 
         Vector3 m_LastRaycastResult;
 
-        // Gravity tracking
+        // Theo dõi trọng lực
         float m_VerticalVelocity = 0f;
         const float Gravity = -20f;
 
-        // Cache transform to reduce property access overhead
+        // Lưu cache transform để giảm chi phí truy cập thuộc tính
         Transform m_Transform;
 
         void Awake()
@@ -132,11 +132,11 @@ namespace CreatorKitCodeInternal {
             m_LevelLayer = 1 << LayerMask.NameToLayer("Level");
             m_TargetLayer = 1 << LayerMask.NameToLayer("Target");
 
-        // (removed: was m_CurrentState = State.DEFAULT)ULT;
+
 
             m_CharacterAudio = GetComponent<CharacterAudio>();
 
-            // COMBAT REFACTOR: Cache CombatController reference for attack input.
+            // TÁI CẤU TRÚC COMBAT: Lưu cache reference CombatController dùng cho input tấn công.
             m_CombatController = GetComponent<CombatController>();
         
             m_CharacterData.OnDamage += () =>
@@ -179,13 +179,13 @@ namespace CreatorKitCodeInternal {
                 return;
             }
         
-            // MOVEMENT REFACTOR: WASD-based movement using CharacterController.
-            if (GameInput.Instance == null) return; // Guard: wait until GameInput is ready
+            // TÁI CẤU TRÚC DI CHUYỂN: Di chuyển bằng phím WASD sử dụng CharacterController.
+            if (GameInput.Instance == null) return; // Bảo vệ: chờ đến khi GameInput sẵn sàng
             Vector2 moveInput = GameInput.Instance.MoveInput;
             float h = moveInput.x;
             float v = moveInput.y;
 
-            // Camera-relative movement for top-down control
+            // Di chuyển tương đối theo góc nhìn camera cho điều khiển từ trên xuống (top-down)
             Vector3 camForward = m_MainCamera.transform.forward;
             camForward.y = 0f;
             camForward.Normalize();
@@ -195,17 +195,17 @@ namespace CreatorKitCodeInternal {
             camRight.Normalize();
 
             Vector3 moveDir = (camRight * h + camForward * v).normalized;
-            // Avoid allocating a new Vector2 just to check if there's input
+            // Tránh cấp phát Vector2 mới chỉ để kiểm tra xem có input không
             float inputMag = (Mathf.Abs(h) > 0.001f || Mathf.Abs(v) > 0.001f) ? 1f : 0f;
 
-            // Smoothly rotate character to face movement direction
+            // Xoay nhân vật mượt mà theo hướng di chuyển
             if (moveDir.sqrMagnitude > 0.001f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDir);
                 m_Transform.rotation = Quaternion.Slerp(m_Transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
             }
 
-            // Apply movement via CharacterController (no NavMeshAgent click-to-move)
+            // Áp dụng di chuyển thông qua CharacterController (không dùng click-to-move của NavMeshAgent)
             if (m_CharacterController != null && m_CharacterController.enabled)
             {
                 Vector3 moveVelocity = moveDir * Speed * Time.deltaTime;
@@ -223,7 +223,7 @@ namespace CreatorKitCodeInternal {
                     CameraController.Instance.Zoom(-mouseWheel * Time.deltaTime * 20.0f);
             }
         
-            // New: rotate camera around player while holding right mouse button
+            // Mới: xoay camera quanh người chơi khi giữ chuột phải
             if (GameInput.Instance.CameraRotateHeld)
             {
                 Vector3 view = m_MainCamera.ScreenToViewportPoint(Input.mousePosition);
@@ -232,39 +232,39 @@ namespace CreatorKitCodeInternal {
                     float mouseX = GameInput.Instance.CameraRotateDelta;
                     if (!Mathf.Approximately(mouseX, 0f) && CameraController.Instance != null)
                     {
-                        // Rotate the camera GameObject around the player's Y axis (yaw) based on mouse movement.
+                        // Xoay GameObject camera quanh trục Y của người chơi (yaw) dựa trên chuyển động của chuột.
                         CameraController.Instance.transform.RotateAround(m_Transform.position, Vector3.up, mouseX * cameraRotateSpeed * Time.deltaTime);
                     }
                 }
             }
         
-            // Update animator speed parameter from input magnitude (not NavMeshAgent).
+            // Cập nhật tham số tốc độ animator từ độ lớn của input (không từ NavMeshAgent).
             m_Animator.SetFloat(m_SpeedParamID, inputMag);
 
-            // COMBAT INPUT: Delegate attack to CombatController.
-            // Replaced: space key attack -> click-to-attack on left mouse button.
+            // COMBAT INPUT: Ủy thác (delegate) tấn công cho CombatController.
+            // Thay đổi: tấn công bằng phím space -> nhấp chuột trái để tấn công mục tiêu.
             if (GameInput.Instance.AttackPressed && m_CombatController != null)
             {
-                // Ignore clicks when over UI
+                // Bỏ qua các thao tác nhấp chuột khi con trỏ ở trên UI
                 if (!EventSystem.current || !EventSystem.current.IsPointerOverGameObject())
                 {
                     var target = GetClickedCharacterData();
                     if (target != null)
                     {
                         m_CombatController.TryAttackAt(target);
-                        // Also set local current target for UI compatibility
+                        // Đồng thời thiết lập mục tiêu hiện tại cục bộ để tương thích với UI
                         m_CurrentTargetCharacterData = target;
                     }
                 }
             }
 
-            // Sync target with CombatController so UISystem displays correct enemy health
+            // Đồng bộ mục tiêu với CombatController để hệ thống UI hiển thị chính xác máu kẻ địch
             if (m_CombatController != null)
             {
                 m_CurrentTargetCharacterData = m_CombatController.CurrentTarget;
             }
         
-            //Keyboard shortcuts
+            // Phím tắt bàn phím
             if(GameInput.Instance.InventoryPressed)
                 UISystem.Instance.ToggleInventory();
         }
@@ -274,15 +274,15 @@ namespace CreatorKitCodeInternal {
             Ray ray = m_MainCamera.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
-            // Raycast against physics, using default distance
+            // Bắn tia quét (raycast) trên hệ thống vật lý với khoảng cách mặc định
             if (Physics.Raycast(ray, out hit, 100f))
             {
-                // Try to get CharacterData on clicked object or its parents
+                // Thử lấy CharacterData trên đối tượng được nhấp vào hoặc các đối tượng cha của nó
                 var cd = hit.collider.GetComponentInParent<CharacterData>();
                 if (cd != null)
                     return cd;
 
-                // If clicked an Interactable, optionally handle interaction
+                // Nếu nhấp vào một Interactable, có thể xử lý tương tác tùy kịch bản
                 var interact = hit.collider.GetComponentInParent<InteractableObject>();
                 if (interact != null && interact.IsInteractable)
                 {
@@ -343,7 +343,7 @@ namespace CreatorKitCodeInternal {
                     loot.InteractWith(m_CharacterData);
                 }
             }
-            // Generic interactable support (no NavMesh auto-move anymore, requires player to be in range)
+            // Tương tác đa năng (không còn tự động di chuyển với NavMesh nữa, yêu cầu người chơi phải ở trong tầm)
             else if (obj is InteractableObject interactable)
             {
                 if (interactable != null && interactable.IsInteractable)

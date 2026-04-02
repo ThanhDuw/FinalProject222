@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using CreatorKitCode;
 using UnityEngine;
@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace CreatorKitCodeInternal 
 {
     /// <summary>
-    /// Handle display the names of every loot on screen (which are button for easy pickup)
+    /// Xử lý việc hiển thị tên của mọi vật phẩm rơi trên màn hình (dưới dạng các nút để dễ dàng nhặt)
     /// </summary>
     public class LootUI : MonoBehaviour
     {
@@ -38,13 +38,13 @@ namespace CreatorKitCodeInternal
             Instance = this;
         }
 
-        // Start is called before the first frame update
+        // Start được gọi trước khung hình đầu tiên (frame)
         void Start()
         {
             const int poolSize = 16;
             for (int i = 0; i < poolSize; ++i)
             {
-                //probably more efficient to use a custom 
+                // hiệu quả hơn nếu sử dụng cách gán tùy chỉnh 
                 Button b = Instantiate(ButtonPrefab, transform);
                 b.gameObject.SetActive(false);
                 Text t = b.GetComponentInChildren<Text>();
@@ -89,7 +89,7 @@ namespace CreatorKitCodeInternal
             return (screenPosition.x >= 0 && screenPosition.y >= 0 && screenPosition.x <= Screen.width && screenPosition.y <= Screen.height);
         }
 
-        // Update is called once per frame
+        // Update được gọi sau mỗi khung hình (frame)
         void Update()
         {
             List<Loot> newOffscreen = new List<Loot>();
@@ -134,7 +134,7 @@ namespace CreatorKitCodeInternal
                 }
             }
         
-            //do that at the end so we don't recompute their position in the second loop
+            // thực hiện ở cuối để chúng ta không tính toán lại vị trí của chúng trong vòng lặp thứ hai
             m_OffScreenLoot.AddRange(newOffscreen);
         }
     }

@@ -3,12 +3,8 @@ using System.Linq;
 using UnityEngine;
 
 /// <summary>
-/// Listens to GameEvents (Enemy / Item / NPC / Location) and forwards
-/// objective updates to QuestTracker.
-///
-/// IMPORTANT: All handlers snapshot GetAllActiveProgresses() with ToList()
-/// before iterating. This prevents InvalidOperationException when completing
-/// a quest causes QuestTracker to remove entries from the dictionary mid-loop.
+/// Lắng nghe GameEvents (Enemy / Item / NPC / Location) và chuyển tiếp
+/// cập nhật mục tiêu tới QuestTracker.
 /// </summary>
 public class ObjectiveSystem : MonoBehaviour
 {
@@ -34,8 +30,6 @@ public class ObjectiveSystem : MonoBehaviour
     {
         if (questTracker == null) return;
 
-        // Snapshot to prevent InvalidOperationException if quest completes
-        // and UntrackQuest() modifies the dictionary during iteration
         var snapshot = questTracker.GetAllActiveProgresses().ToList();
 
         foreach (var progress in snapshot)

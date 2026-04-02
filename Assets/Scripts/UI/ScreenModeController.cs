@@ -2,11 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// ScreenModeController — Handles FullScreen/Window toggle in OptionPanel_UI.
-/// Persists display mode across sessions via PlayerPrefs.
+/// ScreenModeController — Xử lý chuyển đổi Chế độ Toàn màn hình/Cửa sổ trong OptionPanel_UI.
+/// Lưu giữ chế độ hiển thị qua các phiên làm việc bằng PlayerPrefs.
 ///
-/// Setup:
-///   1. Attach to OptionPanel_UI
+/// Thiết lập:
+///   1. Gán vào OptionPanel_UI
 ///   2. fullScreenButton → FullScreen_Button
 ///   3. windowButton     → Window_Button
 /// </summary>

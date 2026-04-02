@@ -4,26 +4,18 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// TravelMenuUI — UI Controller (Travel System)
+/// TravelMenuUI — Controller UI (Hệ thống Dịch chuyển)
 ///
-/// Uses pre-wired buttons defined directly in the scene hierarchy.
-/// No runtime Instantiate — buttons are always present, shown/hidden per availability.
+/// Sử dụng các nút đã được gán sẵn trực tiếp trong cấu trúc scene (hierarchy).
+/// Không khởi tạo (Instantiate) khi chạy — các nút luôn hiện diện, được ẩn/hiện tùy theo tính khả dụng.
 ///
-/// Implements ITravelMenu so NPCTraveler can call Show/Hide.
-///
-/// Hierarchy:
-///   Canvas
-///   └── TravelMenuPanel                  (_menuPanel)
-///       ├── TitleText (Text)             (_titleText)
-///       ├── DestinationList
-///       │   ├── Button_WesternVillage    (_destinationButtons[0])
-///       │   ├── Button_Desert            (_destinationButtons[1])
-///       │   └── Button_Necrom            (_destinationButtons[2])
-///       └── CloseButton (Button)         (_closeButton)
+/// Thực thi ITravelMenu để NPCTraveler có thể gọi Show/Hide.
+
+
 /// </summary>
 public class TravelMenuUI : MonoBehaviour, ITravelMenu
 {
-    // ── Inspector — Panel ─────────────────────────────────────────────────────
+    // Thiết lập Inspector - Bảng điều khiển (Panel)
 
     [Header("Panel")]
     [Tooltip("Root panel GameObject to show/hide.")]
@@ -42,11 +34,11 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
     [Header("Settings")]
     [SerializeField] private string _menuTitle = "Where would you like to go?";
 
-    // ── Runtime ───────────────────────────────────────────────────────────────
+    // Các biến khi chạy (Runtime)
 
     private Action<TravelDestinationData> _onDestinationSelected;
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // Vòng đời (Lifecycle)
 
     private void Start()
     {
@@ -64,15 +56,15 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
         if (_closeButton != null)
             _closeButton.onClick.RemoveListener(Hide);
 
-        // Remove all button listeners to avoid stale references
+        // Xóa tất cả các sự kiện (listener) của nút để tránh tham chiếu cũ
         ClearButtonListeners();
     }
 
-    // ── ITravelMenu Implementation ────────────────────────────────────────────
+    // Thực thi interface ITravelMenu
 
     /// <summary>
-    /// Shows the menu and wires each pre-wired button to its destination.
-    /// Buttons with no matching destination are hidden.
+    /// Hiển thị menu và liên kết từng nút đã tạo sẵn với điểm đến tương ứng.
+    /// Các nút không khớp với điểm đến nào sẽ bị ẩn.
     /// </summary>
     public void Show(List<TravelDestinationData> destinations, Action<TravelDestinationData> onSelected)
     {
@@ -84,7 +76,7 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
 
         _onDestinationSelected = onSelected;
 
-        // Wire each button to its corresponding destination
+        // Liên kết mỗi nút với điểm đến tương ứng của nó
         for (int i = 0; i < _destinationButtons.Count; i++)
         {
             Button btn = _destinationButtons[i];
@@ -94,14 +86,14 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
             {
                 TravelDestinationData dest = destinations[i];
 
-                // Update button label text
+                // Cập nhật văn bản hiển thị trên nút
                 Text label = btn.GetComponentInChildren<Text>();
                 if (label != null)
                     label.text = dest.IsAvailable
                         ? dest.DestinationName
                         : $"{dest.DestinationName} (Unavailable)";
 
-                // Wire onClick — remove old listeners first to avoid duplicates
+                // Gán sự kiện onClick — xóa các sự kiện cũ trước để tránh bị gọi trùng lặp
                 btn.onClick.RemoveAllListeners();
                 btn.interactable = dest.IsAvailable;
 
@@ -115,7 +107,7 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
             }
             else
             {
-                // No destination for this slot — hide the button
+                // Không có điểm đến cho ô này — ẩn nút đi
                 btn.gameObject.SetActive(false);
             }
         }
@@ -128,7 +120,7 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
     }
 
     /// <summary>
-    /// Hides the menu and clears all button listeners.
+    /// Ẩn phần menu và xóa tất cả các sự kiện của nút.
     /// </summary>
     public void Hide()
     {
@@ -139,7 +131,7 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
         _onDestinationSelected = null;
     }
 
-    // ── Private Helpers ───────────────────────────────────────────────────────
+    // Các hàm bổ trợ (Helpers)
 
     private void OnDestinationButtonClicked(TravelDestinationData destination)
     {
@@ -161,7 +153,7 @@ public class TravelMenuUI : MonoBehaviour, ITravelMenu
         }
     }
 
-    // ── Validation ────────────────────────────────────────────────────────────
+    // Xác thực (Validation)
 
     private void ValidateSetup()
     {

@@ -11,12 +11,12 @@ using UnityEditor;
 namespace CreatorKitCode 
 {
     /// <summary>
-    /// Class that handle all the SFX. Through its functions you can play a SFX of a given type at a given position.
-    /// It use pooling to pre-create all the source and recycle them for efficiency reason.
+    /// Lớp xử lý tất cả các hiệu ứng âm thanh (SFX). Thông qua các hàm của lớp này, bạn có thể phát SFX của một loại cụ thể tại một vị trí cụ thể.
+    /// Nó sử dụng pooling để tạo trước tất cả các AudioSource và tái sử dụng chúng nhằm mục đích tối ưu hiệu suất.
     /// </summary>
     public class SFXManager : MonoBehaviour
     {
-        //one use for now
+
         public enum Use
         {
             Player,
@@ -26,7 +26,7 @@ namespace CreatorKitCode
         }
 
         /// <summary>
-        /// Store all data used to play a sound. The pitch will be picked randomly between PitchMin and PitchMax.
+        /// Lưu trữ tất cả dữ liệu được sử dụng để phát âm thanh. Cao độ (pitch) sẽ được chọn ngẫu nhiên giữa PitchMin và PitchMax.
         /// </summary>
         public class PlayData
         {
@@ -92,10 +92,10 @@ namespace CreatorKitCode
         }
 
         /// <summary>
-        /// Get a source of the given type. You will rarely call this directly and instead use PlaySound.
+        /// Lấy một AudioSource của loại cụ thể. Bạn sẽ hiếm khi gọi hàm này trực tiếp mà thay vào đó nên sử dụng PlaySound.
         /// </summary>
-        /// <param name="useType">The type of sound (map to a specific mixer)</param>
-        /// <returns>The AudioSource at the front of the current pool queue for the given type</returns>
+        /// <param name="useType">Loại âm thanh (tương ứng với một mixer cụ thể)</param>
+        /// <returns>AudioSource ở đầu hàng đợi pool hiện tại cho loại âm thanh đã cho</returns>
         public static AudioSource GetSource(Use useType)
         {
             var s = Instance.m_Instances[(int)useType].Dequeue();
@@ -105,11 +105,11 @@ namespace CreatorKitCode
         }
 
         /// <summary>
-        /// Play a sound of the given type using the info in the given PlayData. This will take care of retrieving an
-        /// AudioSource of the given type
+        /// Phát âm thanh của một loại tùy chỉnh bằng thông tin trong PlayData. Hàm này sẽ tự động lấy
+        /// một AudioSource của loại tương ứng.
         /// </summary>
-        /// <param name="useType">The type of sound (map to a specific mixer)</param>
-        /// <param name="data">The PlayData that contains all the data of the sound to play (clip, volume, position etc.)</param>
+        /// <param name="useType">Loại âm thanh (tương ứng với một mixer cụ thể)</param>
+        /// <param name="data">PlayData chứa tất cả dữ liệu của âm thanh cần phát (clip, âm lượng, vị trí v.v.)</param>
 public static void PlaySound(Use useType, PlayData data)
         {
             var source = GetSource(useType);
@@ -117,7 +117,7 @@ public static void PlaySound(Use useType, PlayData data)
             source.clip = data.Clip;
             source.gameObject.transform.position = data.Position;
             source.pitch = Random.Range(data.PitchMin, data.PitchMax);
-            // Scale by global SFX volume set via AudioVolumeController slider
+            // Tính toán âm lượng dựa trên SFX toàn cục từ AudioVolumeController
             source.volume = data.Volume * AudioVolumeController.SFXVolume;
         
             source.Play();
@@ -138,7 +138,7 @@ public static void PlaySound(Use useType, PlayData data)
         }
 
         /// <summary>
-        /// Play the UI button click sound effect (2D, respects SFX volume).
+        /// Phát hiệu ứng âm thanh click nút cho giao diện người dùng (âm thanh 2D, tuân theo cài đặt âm lượng SFX).
         /// </summary>
         public static void PlayButtonClick()
         {

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using CreatorKitCode;
 using UnityEngine;
@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace CreatorKitCodeInternal 
 {
     /// <summary>
-    /// Keep reference and update the Equipment entry (the 6 icons around the character in the Inventory)
+    /// Giữ tham chiếu và cập nhật các ô trang bị (6 biểu tượng xung quanh nhân vật trong túi đồ)
     /// </summary>
     public class EquipmentUI : MonoBehaviour
     {

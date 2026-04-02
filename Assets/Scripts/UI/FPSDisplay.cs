@@ -1,7 +1,7 @@
 using UnityEngine;
 
-// Simple FPS display. Attach to any GameObject (e.g. a UI manager or the Main Camera).
-// Shows a small FPS label in the top-right corner using OnGUI.
+// Hiển thị FPS đơn giản. Gắn vào bất kỳ GameObject nào (ví dụ: UI manager hoặc Main Camera).
+// Hiển thị một nhãn FPS nhỏ ở góc trên bên phải bằng OnGUI.
 public class FPSDisplay : MonoBehaviour
 {
     [Tooltip("How often (seconds) the FPS counter updates")]

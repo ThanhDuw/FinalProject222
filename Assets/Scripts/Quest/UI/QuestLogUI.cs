@@ -4,8 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Full quest log screen — displays all quests grouped by state.
-/// Auto-select priority: 1. ReadyToTurnIn  2. Active  3. Nothing
+/// Toàn bộ màn hình nhật ký nhiệm vụ — hiển thị tất cả các nhiệm vụ được nhóm theo trạng thái.
+/// Ưu tiên tự động chọn: 1. ReadyToTurnIn  2. Active  3. Nothing
 /// </summary>
 public class QuestLogUI : MonoBehaviour
 {
@@ -21,7 +21,7 @@ public class QuestLogUI : MonoBehaviour
     private bool      subscribed = false;
     private Coroutine waitForManagerCoroutine;
 
-    // ── Lifecycle ─────────────────────────────────────────────────────
+
 
     private void Awake()
     {
@@ -58,7 +58,7 @@ public class QuestLogUI : MonoBehaviour
         subscribed = false;
     }
 
-    // ── Subscribe helpers ──────────────────────────────────────────────────
+
 
     private void InitialRefresh()
     {
@@ -84,14 +84,14 @@ public class QuestLogUI : MonoBehaviour
         BuildDisplay();
     }
 
-    // ── Event callback ──────────────────────────────────────────────────
+
 
     private void OnQuestChanged(QuestData _)
     {
         BuildDisplay();
     }
 
-    // ── Public API ──────────────────────────────────────────────────────
+
 
     public void Open()
     {
@@ -111,7 +111,7 @@ public class QuestLogUI : MonoBehaviour
         if (questLogPanel.activeSelf) BuildDisplay();
     }
 
-    // ── Core display ──────────────────────────────────────────────────────
+
 
     private void BuildDisplay()
     {
@@ -130,14 +130,14 @@ public class QuestLogUI : MonoBehaviour
     {
         QuestData pick = null;
 
-        // Priority 1: ReadyToTurnIn
+        // Ưu tiên 1: Sẵn sàng trả nhiệm vụ (ReadyToTurnIn)
         foreach (var q in all)
         {
             if (QuestManager.Instance.GetQuestState(q.questID) == QuestState.ReadyToTurnIn)
             { pick = q; break; }
         }
 
-        // Priority 2: Active
+        // Ưu tiên 2: Đang làm (Active)
         if (pick == null)
         {
             foreach (var q in all)
@@ -277,7 +277,7 @@ public class QuestLogUI : MonoBehaviour
         if (rewardText != null)        rewardText.text        = "";
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+
 
     private string MakeObjectivesText(QuestData quest)
     {

@@ -2,10 +2,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Attach to the Track_Quest button GameObject.
-/// Bridges the UI Button onClick event to QuestTrackerManager.TogglePanel().
-/// Resolves QuestTrackerManager at runtime so it works across all scenes
-/// where PlayerCore (and QuestTrackerManager) is present.
+/// Gắn vào GameObject của nút Track_Quest.
+/// Kết nối sự kiện onClick của UI Button với QuestTrackerManager.TogglePanel().
+/// Tự động tìm QuestTrackerManager lúc chạy (runtime) để hoạt động trên mọi cảnh
+/// có chứa PlayerCore (và QuestTrackerManager).
 /// </summary>
 [RequireComponent(typeof(Button))]
 public class TrackQuestButton : MonoBehaviour

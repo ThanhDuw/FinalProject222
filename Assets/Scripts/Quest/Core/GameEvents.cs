@@ -1,36 +1,32 @@
 using System;
 
 /// <summary>
-/// Static event bus decoupling Enemy/Item/Travel systems from the Quest System.
-/// Raise events here; listeners subscribe from their own systems.
+/// Bus sự kiện tĩnh giúp tách biệt các hệ thống Enemy/Item/Travel khỏi Quest System.
+/// Gửi sự kiện tại đây; các listener sẽ đăng ký từ hệ thống riêng của chúng.
 /// </summary>
 public static class GameEvents
 {
-    // ── Gameplay Events ───────────────────────────────────────────────────────
 
-    public static event Action<string>      OnEnemyKilled;          // enemyID
-    public static event Action<string, int> OnItemCollected;        // itemID, amount
-    public static event Action<string>      OnNPCTalkCompleted;     // npcID
-    public static event Action<string>      OnLocationReached;      // locationID
 
-    // ── Quest Events ──────────────────────────────────────────────────────────
+    public static event Action<string>      OnEnemyKilled;
+    public static event Action<string, int> OnItemCollected;
+    public static event Action<string>      OnNPCTalkCompleted;
+    public static event Action<string>      OnLocationReached;
 
-    /// <summary>Notifies systems when a quest's progress changed (questID).</summary>
+    /// <summary>Thông báo cho các hệ thống khi tiến trình nhiệm vụ thay đổi.</summary>
     public static event Action<string>      OnQuestProgressChanged;
 
-    // ── Travel Events ─────────────────────────────────────────────────────────
-
-    /// <summary>Notifies systems when the player travels to a new map (destinationName).</summary>
+    /// <summary>Thông báo cho các hệ thống khi người chơi di chuyển sang bản đồ mới.</summary>
     public static event Action<string>      OnPlayerTraveled;
 
     /// <summary>
-    /// Notifies UI systems to refresh after a scene transition completes.
-    /// Raised by TravelManager one frame after a new scene finishes loading.
-    /// QuestTrackerManager listens to this to re-subscribe and refresh the HUD.
+    /// Thông báo cho các hệ thống UI làm mới sau khi chuyển cảnh hoàn tất.
+    /// Được gọi bởi TravelManager một frame sau khi cảnh mới tải xong.
+    /// QuestTrackerManager lắng nghe sự kiện này để đăng ký lại và làm mới HUD.
     /// </summary>
     public static event Action OnSceneTransitionComplete;
 
-    // ── Raise Methods ─────────────────────────────────────────────────────────
+
 
     public static void RaiseEnemyKilled(string enemyID)
         => OnEnemyKilled?.Invoke(enemyID);

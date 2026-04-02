@@ -4,15 +4,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Central coordinator — Singleton.
-/// Reads QuestDatabase, orchestrates QuestTracker / ObjectiveSystem / SaveSystem.
+/// Điều phối viên trung tâm — Singleton.
+/// Đọc QuestDatabase, điều phối QuestTracker / ObjectiveSystem / SaveSystem.
 /// </summary>
 public class QuestManager : MonoBehaviour
 {
-    // ── Singleton ────────────────────────────────────────────────────────────
     public static QuestManager Instance { get; private set; }
 
-    // ── Inspector references ─────────────────────────────────────────────────
     [Header("Database")]
     [SerializeField] private QuestDatabase questDatabase;
 
@@ -20,18 +18,15 @@ public class QuestManager : MonoBehaviour
     [SerializeField] private QuestTracker    questTracker;
     [SerializeField] private ObjectiveSystem objectiveSystem;
 
-    // ── Runtime state ────────────────────────────────────────────────────────
     private Dictionary<string, QuestState> questStates = new Dictionary<string, QuestState>();
 
-    // Hold quests restored at startup so we can notify listeners after other Start() methods run
+    // Giữ các nhiệm vụ được khôi phục lúc khởi động để có thể thông báo cho các listener sau khi các hàm Start() khác chạy
     private List<QuestData> deferredStartedNotifications = new List<QuestData>();
 
-    // ── Events ───────────────────────────────────────────────────────────────
     public event Action<QuestData> OnQuestStarted;
     public event Action<QuestData> OnQuestCompleted;
     public event Action<QuestData> OnQuestFailed;
 
-    // ── Unity lifecycle ──────────────────────────────────────────────────────
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -41,7 +36,7 @@ public class QuestManager : MonoBehaviour
 
     private void Start()
     {
-        // Ensure known quests have entries (if not present in save)
+        // Đảm bảo các nhiệm vụ đã biết có mục lưu (nếu không có trong save)
         if (questDatabase != null)
         {
             foreach (var q in questDatabase.AllQuests)
@@ -52,18 +47,18 @@ public class QuestManager : MonoBehaviour
             }
         }
 
-        // Subscribe to progress changed events to detect completion
+        // Đăng ký theo dõi sự kiện thay đổi tiến trình để phát hiện khi hoàn thành
         GameEvents.OnQuestProgressChanged   += HandleQuestProgressChanged;
         GameEvents.OnSceneTransitionComplete += RestoreQuestStateAfterSceneLoad;
 
-        // Start deferred notification coroutine so other Start() methods (e.g., UI) can subscribe first
+        // Bắt đầu coroutine thông báo bị trì hoãn để các hàm Start() khác (ví dụ UI) có thể đăng ký trước
         if (deferredStartedNotifications.Count > 0)
             StartCoroutine(NotifyDeferredStartedNextFrame());
     }
 
     private IEnumerator NotifyDeferredStartedNextFrame()
     {
-        // Wait one frame to allow other MonoBehaviour.Start() to run and subscribe
+        // Đợi một frame để cho phép các MonoBehaviour.Start() khác chạy và đăng ký
         yield return null;
 
         foreach (var q in deferredStartedNotifications)
@@ -82,11 +77,11 @@ public class QuestManager : MonoBehaviour
 
     private void HandleQuestProgressChanged(string questID)
     {
-        // Called when QuestTracker reports changes -- check if all objectives are satisfied
+        // Được gọi khi QuestTracker báo cáo thay đổi -- kiểm tra xem tất cả các mục tiêu đã được thỏa mãn chưa
         var progress = questTracker?.GetProgress(questID);
         if (progress == null) return;
 
-        // Already past Active state -- ignore redundant events
+        // Đã qua trạng thái Active -- bỏ qua các sự kiện thừa
         if (questStates.TryGetValue(questID, out var currentState) &&
             currentState != QuestState.Active) return;
 
@@ -103,16 +98,16 @@ public class QuestManager : MonoBehaviour
 
         if (allSatisfied)
         {
-            // Do NOT complete the quest automatically.
-            // Mark it ReadyToTurnIn so the player must return to the NPC to turn in.
+            // KHÔNG hoàn thành nhiệm vụ một cách tự động.
+            // Đánh dấu là ReadyToTurnIn để người chơi phải quay lại NPC để trả nhiệm vụ.
             MarkReadyToTurnIn(questID);
         }
     }
 
     /// <summary>
-    /// Marks a quest as ready to turn in.
-    /// All objectives are satisfied but reward is not granted yet.
-    /// The player must return to the NPC and confirm via dialogue.
+    /// Đánh dấu một nhiệm vụ là sẵn sàng để trả.
+    /// Tất cả mục tiêu đã hoàn thành nhưng phần thưởng chưa được trao.
+    /// Người chơi phải quay lại NPC và xác nhận qua hội thoại.
     /// </summary>
     public void MarkReadyToTurnIn(string questID)
     {
@@ -122,16 +117,14 @@ public class QuestManager : MonoBehaviour
 
         questStates[questID] = QuestState.ReadyToTurnIn;
 
-        // Keep quest tracked so the HUD continues to show it
-        // (QuestTracker entry is NOT removed until CompleteQuest is called by NPC dialog)
+        // Tiếp tục theo dõi nhiệm vụ để HUD có thể tiếp tục hiển thị
+        // (Chưa loại bỏ khỏi QuestTracker cho đến khi CompleteQuest được gọi bởi hội thoại NPC)
         var quest = questDatabase?.GetQuestByID(questID);
         if (quest != null)
             Debug.Log($"[QuestManager] Quest '{quest.questName}' is ready to turn in.");
     }
 
-    // ── Public API ───────────────────────────────────────────────────────────
-
-    /// <summary>Called by NPCQuestDialog to begin a quest.</summary>
+    /// <summary>Được gọi bởi NPCQuestDialog để bắt đầu một nhiệm vụ.</summary>
     public void StartQuest(QuestData quest)
     {
         if (quest == null) return;
@@ -143,7 +136,7 @@ public class QuestManager : MonoBehaviour
         }
 
         if (questStates.TryGetValue(quest.questID, out var state) && state == QuestState.Active)
-            return; // already active
+            return; // đã kích hoạt
 
         questStates[quest.questID] = QuestState.Active;
         questTracker?.TrackQuest(quest);
@@ -162,10 +155,10 @@ public class QuestManager : MonoBehaviour
         {
             OnQuestCompleted?.Invoke(quest);
 
-            // Grant item reward if defined on this quest.
-            // FIX: PlayerCore (tagged "Player") has no CharacterData directly --
-            // CharacterData lives on the child GameObject "Character".
-            // Use FindWithTag + GetComponentInChildren to find it reliably.
+            // Trao phần thưởng item nếu có.
+            // Sửa lỗi: PlayerCore (gắn tag "Player") không chứa CharacterData trực tiếp --
+            // CharacterData nằm ở GameObject con "Character".
+            // Sử dụng FindWithTag + GetComponentInChildren để tìm nó một cách đáng tin cậy.
             if (quest.itemReward != null)
             {
                 var playerGO   = GameObject.FindWithTag("Player");
@@ -179,7 +172,7 @@ public class QuestManager : MonoBehaviour
             }
         }
 
-        // Stop tracking
+        // Dừng theo dõi
         questTracker?.UntrackQuest(questID);
     }
 
@@ -219,22 +212,20 @@ public class QuestManager : MonoBehaviour
         return list;
     }
 
-    // ── Quest Restore After Scene Load ────────────────────────────────────────
-
     /// <summary>
-    /// Called one frame after a new scene finishes loading
-    /// (via GameEvents.OnSceneTransitionComplete raised by TravelManager).
+    /// Được gọi một frame sau khi cảnh mới tải xong
+    /// (thông qua GameEvents.OnSceneTransitionComplete được gọi bởi TravelManager).
     ///
-    /// Because QuestManager is DontDestroyOnLoad its questStates dict
-    /// survives the scene transition, but QuestTracker is an in-scene
-    /// MonoBehaviour that gets recreated. This method:
-    ///   1. Re-finds the new QuestTracker and ObjectiveSystem references.
-    ///   2. Re-tracks every quest that was Active before the transition.
-    ///   3. Restores per-objective counts from PlayerPrefs via SaveSystem.
+    /// Do QuestManager là DontDestroyOnLoad, từ điển questStates của nó
+    /// tồn tại qua việc chuyển cảnh, nhưng QuestTracker là một MonoBehaviour cục bộ
+    /// được tạo lại. Phương thức này:
+    ///   1. Tìm lại các tham chiếu QuestTracker và ObjectiveSystem mới.
+    ///   2. Đăng ký lại mọi nhiệm vụ đã Active trước khi chuyển cảnh.
+    ///   3. Khôi phục lại tiến độ từng mục tiêu từ PlayerPrefs thông qua SaveSystem.
     /// </summary>
     private void RestoreQuestStateAfterSceneLoad()
     {
-        // 1. Re-acquire in-scene references that were destroyed with the old scene
+        // 1. Tìm lại các tham chiếu trong cảnh
         questTracker    = FindFirstObjectByType<QuestTracker>();
         objectiveSystem = FindFirstObjectByType<ObjectiveSystem>();
 
@@ -244,11 +235,11 @@ public class QuestManager : MonoBehaviour
             return;
         }
 
-        // 2. Load saved objective counts from PlayerPrefs
+        // 2. Tải số lượng vật phẩm nhiệm vụ đã lưu từ PlayerPrefs
         SaveSystem saveSystem = FindFirstObjectByType<SaveSystem>();
         SaveSystem.QuestWrapper savedData = saveSystem != null ? saveSystem.LoadQuestData() : null;
 
-        // Build a quick lookup: questID -> list of (objectiveID, count)
+        // Xây dựng một lookup nhanh
         var savedCounts = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, int>>();
         if (savedData != null && savedData.quests != null)
         {
@@ -262,8 +253,7 @@ public class QuestManager : MonoBehaviour
             }
         }
 
-        // 3. Restore quest states from save data into questStates dict
-        //    (critical for Load Game from Main Menu where dict is all-Inactive)
+        // 3. Khôi phục trạng thái nhiệm vụ
         if (savedData != null && savedData.quests != null)
         {
             foreach (var q in savedData.quests)
@@ -273,7 +263,7 @@ public class QuestManager : MonoBehaviour
             }
         }
 
-        // 4. Re-track every Active or ReadyToTurnIn quest and restore objective progress
+        // 4. Bắt đầu theo dõi lại
         int retracked = 0;
         foreach (var kvp in questStates)
         {
@@ -282,10 +272,10 @@ public class QuestManager : MonoBehaviour
             var questData = questDatabase?.GetQuestByID(kvp.Key);
             if (questData == null) continue;
 
-            // TrackQuest initialises all counts to 0
+            // TrackQuest khởi tạo các đếm về 0
             questTracker.TrackQuest(questData);
 
-            // Restore saved counts on top
+            // Khôi phục bộ đếm
             if (savedCounts.TryGetValue(kvp.Key, out var objMap))
             {
                 foreach (var objEntry in objMap)

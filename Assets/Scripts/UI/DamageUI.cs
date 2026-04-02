@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,8 +6,8 @@ using UnityEngine.UI;
 namespace CreatorKitCodeInternal 
 {
     /// <summary>
-    /// Handle all the UI related to damage number appearing above object/character when they get damaged.
-    /// Manage the pool of UI text and activating, placing and fading them out across time.
+    /// Xử lý tất cả các UI liên quan đến con số sát thương xuất hiện phía trên đối tượng/nhân vật khi họ bị trúng đòn.
+    /// Quản lý pool của UI text, kích hoạt, đặt vị trí và làm mờ chúng theo thời gian.
     /// </summary>
     public class DamageUI : MonoBehaviour
     {

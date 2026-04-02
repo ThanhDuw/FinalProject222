@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using CreatorKitCode;
 using UnityEngine;
@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace CreatorKitCodeInternal 
 {
     /// <summary>
-    /// Main class that handle the Game UI (health, open/close inventory)
+    /// Lớp chính xử lý Giao diện người dùng (UI) trong Game (máu, mở/đóng túi đồ)
     /// </summary>
     public class UISystem : MonoBehaviour
     {
@@ -58,7 +58,7 @@ namespace CreatorKitCodeInternal
             }
         }
 
-        // Update is called once per frame
+        // Update được gọi sau mỗi khung hình (frame)
         void Update()
         {
             UpdatePlayerUI();

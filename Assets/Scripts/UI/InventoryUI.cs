@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using CreatorKitCode;
 using UnityEditor;
@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace CreatorKitCodeInternal 
 {
     /// <summary>
-    /// Handle all the UI code related to the inventory (drag'n'drop of object, using objects, equipping object etc.)
+    /// Xử lý tất cả mã UI liên quan đến túi đồ (kéo thả vật phẩm, dùng vật phẩm, trang bị vật phẩm, v.v.)
     /// </summary>
     public class InventoryUI : MonoBehaviour
     {

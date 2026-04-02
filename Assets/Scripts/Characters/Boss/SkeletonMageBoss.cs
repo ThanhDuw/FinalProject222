@@ -66,7 +66,7 @@ namespace CreatorKitCode
             m_CharacterData       = GetComponent<CharacterData>();
             m_LightningController = GetComponent<LightningStrikeController>();
 
-            // Setup AudioSource for Boss Theme music
+            // Thiết lập AudioSource cho nhạc nền Boss
             m_ThemeSource = gameObject.AddComponent<AudioSource>();
             m_ThemeSource.loop = true;
             m_ThemeSource.playOnAwake = false;
@@ -100,7 +100,7 @@ namespace CreatorKitCode
 
             if (m_CurrentState == BossState.IDLE)
             {
-                // detect player inline
+                // Phát hiện người chơi trong tầm nhìn
                 Collider[] hits = Physics.OverlapSphere(transform.position, m_DetectionRadius, m_PlayerLayer);
                 if (hits.Length > 0)
                 {
@@ -140,7 +140,7 @@ namespace CreatorKitCode
         private IEnumerator CastSkill(int idx)
         {
             m_IsCasting = true;
-            // Play Attack_Laugh when boss attacks
+            // Phát âm thanh Attack_Laugh khi Boss tấn công
             if (m_AttackLaughSound != null)
                 SFXManager.PlaySound(SFXManager.Use.Enemies, new SFXManager.PlayData { Clip = m_AttackLaughSound, Position = transform.position, Volume = 1f });
             float castTime = (idx == 1) ? m_LightningCastTime : m_DarkMagicCastTime;
@@ -152,7 +152,7 @@ namespace CreatorKitCode
             {
                 if (idx == 1)
                 {
-                    // Lightning inline
+                    // Kích hoạt LightningStrike (Sét Đánh)
                     if (m_Target != null)
                     {
                         if (m_LightningController != null) m_LightningController.ExecuteSequence(m_Target.transform.position, m_CharacterData);
@@ -224,7 +224,7 @@ namespace CreatorKitCode
         {
             if (m_CurrentState == BossState.DEAD) return;
             m_CurrentState = BossState.DEAD; m_IsCasting = false; StopAllCoroutines();
-            // Play Boss_Death sound and stop Boss_Theme
+            // Phát âm thanh Boss_Death và dừng hoạt cảnh/nhạc nền Boss_Theme
             if (m_BossDeathSound != null)
                 SFXManager.PlaySound(SFXManager.Use.Enemies, new SFXManager.PlayData { Clip = m_BossDeathSound, Position = transform.position, Volume = 1f });
             StopBossTheme();
@@ -253,7 +253,7 @@ namespace CreatorKitCode
             if (m_ThemePlaying || m_BossThemeMusic == null) return;
             m_ThemePlaying = true;
 
-            // Pause the map BGM
+            // Tạm dừng nhạc nền của bản đồ
             var bgm = FindObjectOfType<RandomBGMPlayer>();
             if (bgm != null)
             {
@@ -273,7 +273,7 @@ namespace CreatorKitCode
 
             if (m_ThemeSource != null) m_ThemeSource.Stop();
 
-            // Resume the map BGM
+            // Tiếp tục phát nhạc nền của bản đồ
             var bgm = FindObjectOfType<RandomBGMPlayer>();
             if (bgm != null)
             {

@@ -4,16 +4,16 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// SceneTransitionUI -- UI Layer (Singleton, DontDestroyOnLoad)
+/// SceneTransitionUI -- Lớp UI (Singleton, DontDestroyOnLoad)
 ///
-/// Handles full-screen fade transitions when switching scenes.
-/// Attach to the TravelManager GameObject alongside TravelManager.
+/// Xử lý hiệu ứng làm mờ toàn màn hình khi chuyển cảnh.
+/// Gán vào GameObject TravelManager cùng với TravelManager.
 ///
-/// Setup in Inspector:
-///   1. Assign _fadePanel (CanvasGroup on the FadePanel Image)
-///   2. Parent Canvas: Screen Space - Overlay, Sort Order 999
+/// Thiết lập trong Inspector:
+///   1. Gán _fadePanel (CanvasGroup trên FadePanel Image)
+///   2. Canvas cha: Screen Space - Overlay, Sort Order 999
 ///
-/// Dependency flow:
+/// Luồng phụ thuộc:
 ///   TravelManager -> SceneTransitionUI.FadeOut() -> SceneManager.LoadScene()
 ///   TravelManager.RestoreAndNotify() -> SceneTransitionUI.FadeIn()
 /// </summary>
@@ -53,8 +53,8 @@ public class SceneTransitionUI : MonoBehaviour
     // -- Public API -----------------------------------------------------------
 
     /// <summary>
-    /// Fades to black then invokes onComplete.
-    /// Call before SceneManager.LoadScene().
+    /// Làm mờ dần thành màu đen sau đó gọi onComplete.
+    /// Gọi trước SceneManager.LoadScene().
     /// </summary>
     public void FadeOut(Action onComplete)
     {
@@ -62,8 +62,8 @@ public class SceneTransitionUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Fades back to clear.
-    /// Call after the new scene is fully restored and ready.
+    /// Làm mờ ngược lại để màn hình rõ nét.
+    /// Gọi sau khi cảnh mới đã được khôi phục hoàn toàn và sẵn sàng.
     /// </summary>
     public void FadeIn()
     {

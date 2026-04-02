@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Tracks runtime progress of all active quests.
-/// Notifies UI layer via OnProgressUpdated.
+/// Theo dõi tiến trình lúc chạy của tất cả các nhiệm vụ đang kích hoạt.
+/// Thông báo cho lớp UI thông qua OnProgressUpdated.
 /// </summary>
 public class QuestTracker : MonoBehaviour
 {
@@ -17,7 +17,7 @@ public class QuestTracker : MonoBehaviour
     public void TrackQuest(QuestData quest)
     {
         if (quest == null || string.IsNullOrEmpty(quest.questID)) return;
-        if (activeProgresses.ContainsKey(quest.questID)) return; // already tracking
+        if (activeProgresses.ContainsKey(quest.questID)) return; // đã theo dõi
 
         var progress = new QuestProgress
         {
@@ -26,7 +26,7 @@ public class QuestTracker : MonoBehaviour
             objectiveCounts = new Dictionary<string, int>()
         };
 
-        // initialize counts to zero for each objective
+        // khởi tạo đếm về không cho từng mục tiêu
         foreach (var obj in quest.objectives)
         {
             if (obj == null || string.IsNullOrEmpty(obj.objectiveID)) continue;
@@ -47,7 +47,7 @@ public class QuestTracker : MonoBehaviour
         OnQuestTrackingStopped?.Invoke(questID);
     }
 
-    /// <summary>Called by ObjectiveSystem when an event matches an objective.</summary>
+    /// <summary>Được gọi bởi ObjectiveSystem khi một sự kiện khớp với một mục tiêu.</summary>
     public void UpdateObjective(string questID, string objectiveID, int amount)
     {
         if (string.IsNullOrEmpty(questID) || string.IsNullOrEmpty(objectiveID)) return;
@@ -63,15 +63,15 @@ public class QuestTracker : MonoBehaviour
 
         progress.objectiveCounts[objectiveID] = updated;
 
-        // Notify listeners about progress change
+        // Thông báo cho các hệ thống đang lắng nghe về sự thay đổi tiến trình
         OnProgressUpdated?.Invoke(progress);
 
-        // Broadcast to other systems that a quest progressed (QuestManager listens to check completion)
+        // Phát sự kiện cho các hệ thống khác biết tiến trình nhiệm vụ (QuestManager lắng nghe để kiểm tra hoàn thành)
         GameEvents.RaiseQuestProgressChanged(progress.questData.questID);
     }
 
-    // Public helper so other systems (like QuestManager) can request a notification
-    // without trying to invoke the event directly (invoking events from outside the declaring type is not allowed).
+    // Helper công khai để các hệ thống khác (như QuestManager) có thể yêu cầu thông báo
+    // mà không cần cố gọi sự kiện trực tiếp (gọi sự kiện từ ngoài lớp khai báo là không được phép).
     public void NotifyProgressUpdated(QuestProgress progress)
     {
         OnProgressUpdated?.Invoke(progress);

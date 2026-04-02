@@ -1,21 +1,21 @@
 using UnityEngine;
 
 /// <summary>
-/// MinimapController -- attached to the MinimapCamera GameObject.
+/// MinimapController -- gắn vào GameObject MinimapCamera.
 ///
-/// Responsibilities:
-///   1. Lock camera height to a fixed value above the player
-///   2. Lock rotation to always look straight down (90 degrees on X)
+/// Nhiệm vụ:
+///   1. Khóa chiều cao camera ở một giá trị cố định phía trên người chơi
+///   2. Khóa góc xoay để luôn nhìn thẳng xuống (90 độ trên trục X)
 ///
-/// The camera follows the player automatically because it is a child of PlayerCore/Character.
-/// NPC and Enemy dots are handled by MinimapMarker components attached directly to those entities.
-/// Player dot is a UI Image (PlayerDot) centered in MinimapMask -- always at center.
+/// Camera tự động đi theo người chơi vì nó là con của PlayerCore/Character.
+/// Các chấm NPC và Kẻ địch được xử lý bởi các component MinimapMarker gắn trực tiếp vào các thực thể đó.
+/// Chấm Người chơi là một UI Image (PlayerDot) nằm giữa MinimapMask -- luôn ở trung tâm.
 ///
-/// Setup:
-///   - Attach to MinimapCamera (child of PlayerCore/Character)
+/// Thiết lập:
+///   - Gắn vào MinimapCamera (con của PlayerCore/Character)
 ///   - Camera: Orthographic, Size=15, Depth=-2, ClearFlags=SolidColor (black)
 ///   - TargetTexture: MinimapRT
-///   - CullingMask: must include "Minimap" layer so MinimapMarker quads are visible
+///   - CullingMask: phải bao gồm layer "Minimap" để các hình vuông MinimapMarker có thể nhìn thấy được
 /// </summary>
 public class MinimapController : MonoBehaviour
 {

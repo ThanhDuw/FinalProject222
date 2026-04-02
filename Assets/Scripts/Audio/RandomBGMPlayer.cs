@@ -41,5 +41,4 @@ namespace CreatorKitCodeInternal
     }
 }
 
-//To make the constant entering/exiting play mode in editor less annoying in this kit, we pick one of 3 random BGM
-//track at random every game start
+// Để tránh gây khó chịu khi liên tục vào/ra chế độ chơi trong editor trong bộ kit này, chúng ta chọn ngẫu nhiên một track BGM mỗi khi bắt đầu game.
