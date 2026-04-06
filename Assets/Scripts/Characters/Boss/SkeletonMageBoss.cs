@@ -254,7 +254,7 @@ namespace CreatorKitCode
             m_ThemePlaying = true;
 
             // Tạm dừng nhạc nền của bản đồ
-            var bgm = FindObjectOfType<RandomBGMPlayer>();
+            var bgm = FindFirstObjectByType<RandomBGMPlayer>();
             if (bgm != null)
             {
                 var bgmSource = bgm.GetComponent<AudioSource>();
@@ -274,7 +274,7 @@ namespace CreatorKitCode
             if (m_ThemeSource != null) m_ThemeSource.Stop();
 
             // Tiếp tục phát nhạc nền của bản đồ
-            var bgm = FindObjectOfType<RandomBGMPlayer>();
+            var bgm = FindFirstObjectByType<RandomBGMPlayer>();
             if (bgm != null)
             {
                 var bgmSource = bgm.GetComponent<AudioSource>();

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using CreatorKitCode;
+using CreatorKitCodeInternal;
 
 /// <summary>
 /// Định tuyến các sự kiện onClick của nút bấm trong MenuManager và khởi tạo
@@ -42,7 +43,21 @@ public class MenuController : MonoBehaviour
     [Header("End Game Credits")]
     [Tooltip("If not assigned, will try to find in scene automatically")]
     [SerializeField] private RewardDisplayUI rewardDisplayUI;
-    [SerializeField] private GameObject simpleCreditsPanel;
+    [SerializeField] private GameObject      simpleCreditsPanel;
+    [Tooltip("Kéo Assets/Audios/Ending.mp3 vào đây")]
+    [SerializeField] private AudioClip       endingMusicClip;
+
+    private AudioSource m_EndingSource;
+
+    private void Awake()
+    {
+        // Khởi tạo AudioSource riêng cho nhạc Ending
+        m_EndingSource             = gameObject.AddComponent<AudioSource>();
+        m_EndingSource.loop        = true;
+        m_EndingSource.playOnAwake = false;
+        m_EndingSource.volume      = AudioVolumeController.MusicVolume;
+        AudioVolumeController.OnMusicVolumeChanged += OnMusicVolumeChanged;
+    }
 
     private void Start()
     {
@@ -121,8 +136,29 @@ public class MenuController : MonoBehaviour
     private System.Collections.IEnumerator ShowCreditsAfterDelay()
     {
         yield return new WaitForSeconds(3f);
-        if (rewardDisplayUI != null) rewardDisplayUI.HideReward();
+        if (rewardDisplayUI    != null) rewardDisplayUI.HideReward();
         if (simpleCreditsPanel != null) simpleCreditsPanel.SetActive(true);
+
+        // Dừng nhạc nền BGM của scene ngay lập tức
+        var bgm = FindFirstObjectByType<RandomBGMPlayer>();
+        if (bgm != null)
+        {
+            var bgmSource = bgm.GetComponent<AudioSource>();
+            if (bgmSource != null) bgmSource.Stop();
+        }
+
+        // Phát nhạc Ending (loop, theo MusicVolume)
+        if (m_EndingSource != null && endingMusicClip != null)
+        {
+            m_EndingSource.clip   = endingMusicClip;
+            m_EndingSource.volume = AudioVolumeController.MusicVolume;
+            m_EndingSource.Play();
+        }
+    }
+
+    private void OnMusicVolumeChanged(float volume)
+    {
+        if (m_EndingSource != null) m_EndingSource.volume = volume;
     }
 
     private void Update()
@@ -144,6 +180,7 @@ public class MenuController : MonoBehaviour
 
     private void OnDestroy()
     {
+        AudioVolumeController.OnMusicVolumeChanged -= OnMusicVolumeChanged;
         if (menuOpenButton  != null) { menuOpenButton.onClick.RemoveListener(PlayClickSound);  menuOpenButton.onClick.RemoveListener(ToggleMenu); }
         if (menuCloseButton != null) { menuCloseButton.onClick.RemoveListener(PlayClickSound); menuCloseButton.onClick.RemoveListener(CloseMenu); }
         if (mainMenuButton  != null) { mainMenuButton.onClick.RemoveListener(PlayClickSound);  mainMenuButton.onClick.RemoveListener(ReturnToMainMenu); }

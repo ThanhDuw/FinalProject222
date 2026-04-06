@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using CreatorKitCode;
 
 /// <summary>
 /// Gắn vào bất kỳ NPC nào cung cấp một hoặc nhiều nhiệm vụ.
@@ -43,11 +44,15 @@ public class NPCQuestDialog : MonoBehaviour
     private int   _turnInStepIndex = 0;
 
     [Header("Typewriter Effect")]
-    [SerializeField] private float typewriterSpeed = 30f; // số ký tự mỗi giây
+    [SerializeField] private float     typewriterSpeed      = 30f;   // số ký tự mỗi giây
+    [SerializeField] private AudioClip typingSoundClip;              // clip âm thanh typing - kéo Typing.mp3 vào đây
+    [SerializeField] [Range(0f, 1f)] private float typingSoundVolume = 0.5f;  // âm lượng
+    [SerializeField] private float     typingSoundInterval  = 0.08f; // giới hạn tần suất (giây)
 
     private Coroutine _typewriterCoroutine;
-    private bool      _isTyping = false;
-    private string    _fullDialogueText = "";
+    private bool      _isTyping            = false;
+    private string    _fullDialogueText    = "";
+    private float     _lastTypingSoundTime = -999f;
 
     private enum DialogueStep
     {
@@ -219,6 +224,24 @@ public class NPCQuestDialog : MonoBehaviour
         foreach (char c in fullText)
         {
             dialogueBodyText.text += c;
+
+            // Phát âm thanh nếu ký tự không phải khoảng trắng và đã qua đủ khoảng thời gian
+            if (typingSoundClip != null && !char.IsWhiteSpace(c))
+            {
+                float now = Time.unscaledTime;
+                if (now - _lastTypingSoundTime >= typingSoundInterval)
+                {
+                    _lastTypingSoundTime = now;
+                    SFXManager.PlaySound(SFXManager.Use.Sound2D, new SFXManager.PlayData
+                    {
+                        Clip     = typingSoundClip,
+                        Volume   = typingSoundVolume,
+                        PitchMin = 0.95f,
+                        PitchMax = 1.05f
+                    });
+                }
+            }
+
             if (delay > 0f)
                 yield return new WaitForSeconds(delay);
         }
