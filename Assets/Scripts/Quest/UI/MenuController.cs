@@ -36,9 +36,14 @@ public class MenuController : MonoBehaviour
     [SerializeField] private Button     helpButton;
     [SerializeField] private GameObject helpPanel;
 
+    [Header("Quit Game")]
+    [SerializeField] private Button     quitButton;
+
     [Header("Save Game")]
     [SerializeField] private SaveSystem saveSystem;
     [SerializeField] private Button     saveButton;
+    [Tooltip("Panel thông báo đã lưu thành công. Tự động tắt sau một khoảng thời gian.")]
+    [SerializeField] private GameObject savedPanel;
 
     [Header("End Game Credits")]
     [Tooltip("If not assigned, will try to find in scene automatically")]
@@ -109,11 +114,18 @@ public class MenuController : MonoBehaviour
             saveButton.onClick.AddListener(SaveGame);
         }
 
-        // Start hidden
+        if (quitButton != null)
+        {
+            quitButton.onClick.AddListener(PlayClickSound);
+            quitButton.onClick.AddListener(QuitGame);
+        }
+
+        // Ẩn tất cả các panel khi bắt đầu
         questLogUI?.Close();
         if (menuPanel   != null) menuPanel.SetActive(false);
         if (optionPanel != null) optionPanel.SetActive(false);
         if (helpPanel   != null) helpPanel.SetActive(false);
+        if (savedPanel  != null) savedPanel.SetActive(false);
 
 
         if (rewardDisplayUI == null) rewardDisplayUI = UnityEngine.Object.FindFirstObjectByType<RewardDisplayUI>();
@@ -138,6 +150,10 @@ public class MenuController : MonoBehaviour
         yield return new WaitForSeconds(3f);
         if (rewardDisplayUI    != null) rewardDisplayUI.HideReward();
         if (simpleCreditsPanel != null) simpleCreditsPanel.SetActive(true);
+
+        // Đảm bảo con trỏ chuột hiển thị trong màn hình Credits
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
 
         // Dừng nhạc nền BGM của scene ngay lập tức
         var bgm = FindFirstObjectByType<RandomBGMPlayer>();
@@ -188,6 +204,7 @@ public class MenuController : MonoBehaviour
         if (optionButton    != null) { optionButton.onClick.RemoveListener(PlayClickSound);    optionButton.onClick.RemoveListener(ToggleOptionPanel); }
         if (helpButton      != null) { helpButton.onClick.RemoveListener(PlayClickSound);      helpButton.onClick.RemoveListener(ToggleHelpPanel); }
         if (saveButton      != null) { saveButton.onClick.RemoveListener(PlayClickSound);      saveButton.onClick.RemoveListener(SaveGame); }
+        if (quitButton      != null) { quitButton.onClick.RemoveListener(PlayClickSound);      quitButton.onClick.RemoveListener(QuitGame); }
     }
 
 
@@ -238,6 +255,16 @@ public class MenuController : MonoBehaviour
     {
         Time.timeScale = 1f;
         UnityEngine.SceneManagement.SceneManager.LoadScene(0);
+    }
+
+    private void QuitGame()
+    {
+        Debug.Log("[MenuController] Thoát game.");
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     /// <summary>
@@ -292,7 +319,19 @@ public class MenuController : MonoBehaviour
         saveSystem.SaveAll(characterData, currentSceneIndex, spawnPointID);
 
         Debug.Log("[MenuController] ✅ Game saved successfully!");
-        
-        // TODO: Thêm popup thông báo UI khi hệ thống UI hỗ trợ
+
+        // Hiển thị thông báo đã lưu cho người chơi
+        StartCoroutine(ShowSavedPanel());
+    }
+
+    /// <summary>
+    /// Hiển thị SavedPanel trong một khoảng thời gian ngắn rồi tự ẩn.
+    /// </summary>
+    private System.Collections.IEnumerator ShowSavedPanel()
+    {
+        if (savedPanel == null) yield break;
+        savedPanel.SetActive(true);
+        yield return new WaitForSeconds(2f);
+        savedPanel.SetActive(false);
     }
 }

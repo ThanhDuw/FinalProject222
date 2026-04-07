@@ -180,9 +180,6 @@ public class RewardDisplayUI : MonoBehaviour
              SetPanelState(false);
         }
 
-        // Khoá lại trạng thái chuột (tuỳ hệ thống game của bạn setup)
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
         
         OnPanelClosed?.Invoke();
     }

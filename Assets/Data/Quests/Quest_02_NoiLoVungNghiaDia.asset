@@ -22,7 +22,9 @@ MonoBehaviour:
     description: 'Eliminate Skeletons '
     type: 0
     targetID: Skeleton
-    requiredAmount: 1
+    requiredAmount: 15
   experienceReward: 120
   goldReward: 250
   itemReward: {fileID: 11400000, guid: 4500b95fa4b4f9e46842bec4714c7c33, type: 2}
+  turnInDialogueSteps: []
+  rewardDisplayPrefab: {fileID: 0}

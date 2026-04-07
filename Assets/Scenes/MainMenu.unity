@@ -1571,6 +1571,20 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 3089614546123383746}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1479530317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1479530313}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb0131455657c184fb94752706cfa020, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenModeController
+  fullScreenButton: {fileID: 420147184}
+  windowButton: {fileID: 902649877}
 --- !u!1 &1485563028
 GameObject:
   m_ObjectHideFlags: 0
@@ -2711,7 +2725,11 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 254061628}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 650023099928341856, guid: 7f6bdf59a52b1514bac837f78a90db05,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1479530317}
   m_SourcePrefab: {fileID: 100100000, guid: 7f6bdf59a52b1514bac837f78a90db05, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
