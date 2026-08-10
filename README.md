@@ -42,5 +42,5 @@
 ## 👤 Author
 * **Developer:** Dư Đức Thành
 * **Email:** phatduduc@gmail.com
-* **LinkedIn:** https://www.linkedin.com/in/d%C6%B0-%C4%91%E1%BB%A9c-th%C3%A0nh-925905427/
+* **LinkedIn:** https://www.linkedin.com/in/duducthanh/
 
